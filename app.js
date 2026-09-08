@@ -55,6 +55,7 @@
     boot.setAttribute("aria-hidden", "true");
     document.body.dataset.state = "online";
     document.body.style.overflow = "";
+    scheduleSongAuto();
   }
   if (boot) {
     document.body.style.overflow = "hidden";
@@ -692,8 +693,15 @@
     trackBtns.forEach((b) => b.classList.toggle("is-active", parseInt(b.dataset.track, 10) === songIdx));
   }
 
+  const soundPrompt = $("#soundPrompt");
+  let songAutoDone = false, songStarted = false;
+
   function setSongUI(state) { // 1 playing, 2 paused, 3 buffering
     const playing = state === 1 || state === 3;
+    if (playing) {
+      songStarted = true;
+      if (soundPrompt) soundPrompt.hidden = true;
+    }
     if (songPlay) {
       songPlay.textContent = playing ? "\u275A\u275A PAUSE" : "\u25B6 PLAY";
       songPlay.setAttribute("aria-pressed", String(playing));
@@ -778,6 +786,36 @@
     if (!ytPlayer || !ytReady) return;
     try { ytPlayer.setVolume(parseInt(songVol.value, 10)); } catch { /* ignore */ }
   });
+
+  /* Delayed autoplay: try ~5s after entry; browsers that block it
+     (most, without a prior gesture) get a one-tap sound prompt. */
+  function attemptSongAuto(attempts = 0) {
+    if (songAutoDone || songStarted) return;
+    if (ytPlayer && ytReady) {
+      songAutoDone = true;
+      try { ytPlayer.playVideo(); } catch { /* blocked below */ }
+      window.setTimeout(() => {
+        let st = -99;
+        try { st = ytPlayer.getPlayerState(); } catch { /* ignore */ }
+        if (st !== 1 && !songStarted && soundPrompt) soundPrompt.hidden = false;
+      }, 1800);
+      return;
+    }
+    if (attempts < 4) window.setTimeout(() => attemptSongAuto(attempts + 1), 2500);
+    else if (soundPrompt) soundPrompt.hidden = false;
+  }
+  function scheduleSongAuto() {
+    const wait = Math.max(0, 5000 - (Date.now() - t0));
+    window.setTimeout(attemptSongAuto, wait);
+  }
+  soundPrompt?.addEventListener("click", () => {
+    if (soundPrompt) soundPrompt.hidden = true;
+    try {
+      if (ytPlayer && ytReady) ytPlayer.playVideo();
+      else playTrack(songIdx);
+    } catch { /* ignore */ }
+  });
+  loadYtApi(); // warm the player early so the delayed start is instant
 
   /* ---------- 13. FINDS LIGHTBOX ---------- */
   const gItems = $$(".drift-item");
