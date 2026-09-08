@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CYBERCORE — enter the forgotten world</title>
+  <meta name="description" content="Descend into Cybercore: signal, object, machine, rooms, memory, network, archive. A forgotten technological world." />
+  <meta name="theme-color" content="#07090b" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,400&family=VT323&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1e21'/%3E%3Crect x='6' y='6' width='20' height='14' rx='2' fill='none' stroke='%23c9ced2' stroke-width='2'/%3E%3Crect x='10' y='24' width='12' height='2' fill='%238cff9e'/%3E%3Ccircle cx='16' cy='13' r='3' fill='%237dd8ff'/%3E%3C/svg%3E" />
+</head>
+<body data-state="booting">
+  <a class="skip" href="#main">Skip into the world</a>
+
+  <!-- AIRLOCK -->
+  <div class="boot" id="boot" aria-hidden="false" role="presentation">
+    <div class="boot-inner">
+      <p class="boot-brand">CYBERCORE <span>v4.0 // DESCENT</span></p>
+      <div class="boot-log" id="bootLog" aria-hidden="true"></div>
+      <div class="boot-bar" aria-hidden="true"><span id="bootBarFill"></span></div>
+      <div class="boot-row">
+        <p class="boot-hint" id="bootHint">warming up the tube…</p>
+        <button class="boot-enter" id="bootEnter" type="button" disabled>
+          <span class="boot-enter-key">⏻</span> DESCEND
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATMOSPHERE -->
+  <div class="grain" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+  <div class="cursor-dot" id="cursorDot" aria-hidden="true"></div>
+  <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
+
+  <!-- WORLD NAV: system strip -->
+  <div class="sysbar">
+    <span class="lcd lcd-chapter" id="chapterLcd" title="Current depth">01 · SIGNAL</span>
+    <span class="lcd lcd-clock" id="clock" title="Local time">00:00:00</span>
+    <button class="key key-toggle" id="soundToggle" type="button" aria-pressed="false" data-hover title="Toggle room tone (generated, no audio files)">
+      <span class="sound-icon" aria-hidden="true"><span></span><span></span><span></span></span>
+      <span class="sound-label" id="soundLabel">SOUND OFF</span>
+    </button>
+    <button class="key" id="indexBtn" type="button" data-hover aria-haspopup="dialog">INDEX</button>
+    <button class="key" id="musicBtn" type="button" data-hover aria-expanded="false" aria-controls="musicDeck" title="Open the ambient music deck (original generative score)">
+      <span class="led led-green" id="musicLed" aria-hidden="true" hidden></span> MUSIC
+    </button>
+  </div>
+
+  <!-- AMBIENT MUSIC DECK: original generative score, no audio files -->
+  <div class="music-deck rivets" id="musicDeck" role="group" aria-label="Ambient music deck" hidden>
+    <p class="deck-label">AMBIENCE · GENERATED LIVE <span class="led led-green" id="musicDeckLed" aria-hidden="true" hidden></span></p>
+    <p class="music-title" id="musicTrackLabel">SIDE A — “TUBE WARMTH”</p>
+    <div class="music-row">
+      <button class="key" id="musicPlay" type="button" aria-pressed="false" data-hover>▶ PLAY</button>
+      <button class="key" id="musicMute" type="button" aria-pressed="false" data-hover>MUTE</button>
+    </div>
+    <label class="tune" for="musicVol">VOLUME
+      <input type="range" id="musicVol" min="0" max="100" value="55" data-hover />
+    </label>
+    <p class="music-note">An original endless score — soft pads, distant tones, room air. Never leaves your browser.</p>
+    <div class="transmission">
+      <p class="deck-label">TRANSMISSION · FOUND SIGNAL <span class="led led-amber" id="songLed" aria-hidden="true" hidden></span></p>
+      <div class="yt-screen" id="ytScreen">
+        <div id="ytPlayer" title="Official YouTube player"></div>
+      </div>
+      <p class="music-title music-title-song" id="songTitle">BEACH HOUSE — “SPACE SONG”</p>
+      <p class="music-sub" id="songSub">SUB POP · 2015 · OFFICIAL UPLOAD · 5:20</p>
+      <div class="track-row" role="group" aria-label="Found songs">
+        <button class="key track is-active" type="button" data-track="0" data-hover>SPACE SONG</button>
+        <button class="key track" type="button" data-track="1" data-hover>MY LOVE…</button>
+      </div>
+      <div class="music-row">
+        <button class="key" id="songPlay" type="button" aria-pressed="false" data-hover>▶ PLAY</button>
+        <button class="key" id="songMute" type="button" aria-pressed="false" data-hover>MUTE</button>
+      </div>
+      <label class="tune" for="songVol">VOLUME
+        <input type="range" id="songVol" min="0" max="100" value="55" data-hover />
+      </label>
+      <p class="music-note" id="songNote">Plays only when you press play. <a id="songWatch" href="https://www.youtube.com/watch?v=RBtlPT23PTM" target="_blank" rel="noopener" data-hover>Watch on YouTube ↗</a></p>
+    </div>
+  </div>
+
+  <!-- WORLD NAV: index overlay (system map) -->
+  <div class="indexmap" id="indexmap" role="dialog" aria-modal="true" aria-labelledby="indexTitle" hidden>
+    <div class="index-bg" data-index-close></div>
+    <nav class="index-panel rivets" aria-label="World index">
+      <p class="engraved" id="indexTitle">SYSTEM MAP · WHERE TO GO</p>
+      <a href="#signal" data-hover><i>01</i><b>Signal</b><span>the call</span></a>
+      <a href="#object" data-hover><i>02</i><b>Object</b><span>it opens</span></a>
+      <a href="#machine" data-hover><i>03</i><b>Machine</b><span>the unit</span></a>
+      <a href="#silence" data-hover><i>04</i><b>Silence</b><span>rest here</span></a>
+      <a href="#rooms" data-hover><i>05</i><b>Rooms</b><span>lit spaces</span></a>
+      <a href="#desk" data-hover><i>06</i><b>Desk</b><span>sit down</span></a>
+      <a href="#moments" data-hover><i>✳</i><b>Midnight</b><span>the life</span></a>
+      <a href="#day" data-hover><i>☀</i><b>Sunday</b><span>the day</span></a>
+      <a href="#ordinary" data-hover><i>◍</i><b>Ordinary</b><span>days</span></a>
+      <a href="#outside" data-hover><i>◐</i><b>Curfew</b><span>outside</span></a>
+      <a href="#desktop" data-hover><i>07</i><b>Desktop</b><span>use it</span></a>
+      <a href="#music" data-hover><i>08</i><b>Music</b><span>mixtape</span></a>
+      <a href="#lab" data-hover><i>09</i><b>Signal Lab</b><span>static</span></a>
+      <a href="#vault" data-hover><i>10</i><b>Vault</b><span>fragments</span></a>
+      <a href="#finds" data-hover><i>11</i><b>Finds</b><span>recoveries</span></a>
+      <a href="#leave" data-hover><i>12</i><b>Surface</b><span>log off</span></a>
+      <button class="key" id="indexClose" type="button" data-hover>CLOSE ✕</button>
+    </nav>
+  </div>
+
+  <main id="main">
+    <!-- 01 · SIGNAL — opening scene -->
+    <section class="scene scene-signal" id="signal" data-chapter="01 · SIGNAL" aria-label="Signal: the opening scene">
+      <div class="scene-sticky">
+        <p class="sig-kicker"><span class="blink" aria-hidden="true">●</span> INCOMING SIGNAL — DO NOT ADJUST YOUR SET</p>
+        <span class="sig-line" aria-hidden="true"></span>
+        <figure class="sig-figure" aria-hidden="false">
+          <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1800&q=65" alt="" fetchpriority="high" decoding="async" />
+        </figure>
+        <h1 class="chrome-title sig-title" aria-label="Cybercore">CYBERCORE</h1>
+        <p class="sig-sub">the screen flickered. something stayed on.</p>
+        <p class="sig-cue">SCROLL TO DESCEND ↓</p>
+        <p class="sig-coords" aria-hidden="true">35.6812° N / 139.7671° E · 60Hz · CH-A</p>
+      </div>
+    </section>
+
+    <!-- 02 · OBJECT — it opens -->
+    <section class="scene scene-object" id="object" data-chapter="02 · OBJECT" aria-label="Object: a small thing that opens">
+      <div class="scene-sticky">
+        <p class="micro micro-a">OBJECT 001 — HALL C · HANDLE WITH CARE</p>
+        <figure class="obj-frame bezel">
+          <img src="https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&w=1600&q=65" alt="Hands holding a small digital camera, recovered from Hall C" loading="lazy" decoding="async" />
+          <span class="screen-glass" aria-hidden="true"></span>
+        </figure>
+        <p class="micro micro-b">ENVIRONMENT 001 — THE INSIDE OF THE OBJECT</p>
+        <p class="obj-caption">it still holds a charge.</p>
+      </div>
+    </section>
+
+    <!-- 03 · MACHINE — the unit -->
+    <section class="scene scene-machine" id="machine" data-chapter="03 · MACHINE" aria-label="Machine: operate the unit">
+      <div class="scene-sticky">
+        <figure class="mch-bg" aria-hidden="true">
+          <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=2000&q=65" alt="" loading="lazy" decoding="async" />
+        </figure>
+        <p class="mch-chip mch-chip-a">RACK-42 · HUMMING SINCE 2003</p>
+        <div class="crt mch-crt" id="heroCrt">
+          <div class="crt-shell rivets">
+            <div class="crt-vents" aria-hidden="true"></div>
+            <p class="crt-plate" aria-hidden="true">COLOR DISPLAY · CA-2001</p>
+            <div class="screen" id="heroScreen">
+              <img class="screen-img is-on" data-ch="CH-A · TRACE" src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1200&q=60" alt="" loading="lazy" decoding="async" />
+              <img class="screen-img" data-ch="CH-B · CLASS" src="https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1200&q=60" alt="" loading="lazy" decoding="async" />
+              <img class="screen-img" data-ch="CH-C · AIRWAVES" src="https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=1200&q=60" alt="" loading="lazy" decoding="async" />
+              <span class="screen-glass" aria-hidden="true"></span>
+              <span class="screen-scan" aria-hidden="true"></span>
+              <span class="screen-osd" id="chLabel" aria-hidden="true">CH-A · TRACE</span>
+            </div>
+            <div class="crt-chin">
+              <span class="speaker" aria-hidden="true"></span>
+              <div class="crt-controls">
+                <span class="led led-green" id="screenLed" aria-hidden="true"></span>
+                <button class="knob" id="chKnob" type="button" data-hover aria-label="Turn channel knob: switch display input">
+                  <span class="knob-dial" aria-hidden="true"><i></i></span>
+                  <b>CHANNEL</b>
+                </button>
+                <button class="key key-small" id="screenStandby" type="button" aria-pressed="false" data-hover>STANDBY</button>
+              </div>
+              <span class="speaker" aria-hidden="true"></span>
+            </div>
+          </div>
+        </div>
+        <p class="mch-chip mch-chip-b">THREE CHANNELS · TURN THE KNOB</p>
+        <h2 class="mch-title">the machine<br /><em>dreams.</em></h2>
+      </div>
+    </section>
+
+    <!-- 04 · SILENCE -->
+    <section class="silence" id="silence" data-chapter="04 · SILENCE" aria-labelledby="silence-title">
+      <p class="engraved silence-tag reveal">04 — SILENCE <span class="led led-amber" aria-hidden="true"></span></p>
+      <h2 class="silence-title reveal" id="silence-title">Nothing happens here.</h2>
+      <p class="silence-note reveal">Stay a moment.<span class="caret" aria-hidden="true">▌</span></p>
+      <p class="silence-readout reveal" aria-hidden="true">ROOM TEMP 21.4°C · HUM 50Hz · <span id="quietClock">--:--</span></p>
+    </section>
+
+    <!-- 05 · ROOMS -->
+    <div class="chapter-mark" data-chapter="05 · ROOMS" aria-hidden="true"><span>05 — ROOMS · LIT SPACES</span></div>
+    <section class="rooms" id="rooms" aria-label="Rooms: lit spaces">
+      <article class="room-full">
+        <img data-parallax="0.1" src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=2000&q=70" alt="Living room at night lit only by a television glow" loading="lazy" decoding="async" />
+        <span class="room-ghost" aria-hidden="true">01</span>
+        <div class="room-meta"><b>R.01 / BLUE HOUR</b><i>23:47 · VOL. 6 · COMPANY</i><p>The TV stayed on for company.</p></div>
+      </article>
+      <article class="room-full">
+        <img data-parallax="0.1" src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=2000&q=70" alt="Family desk crowded with laptops, papers and cups at night" loading="lazy" decoding="async" />
+        <span class="room-ghost" aria-hidden="true">02</span>
+        <div class="room-meta"><b>R.02 / THE FAMILY DESK</b><i>19:12 · CHAIR TAKEN · HOMEWORK LATER</i><p>Homework happened here. So did everything else.</p></div>
+      </article>
+      <article class="room-full">
+        <img data-parallax="0.1" src="https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=2000&q=70" alt="Empty classroom desks under fluorescent light after hours" loading="lazy" decoding="async" />
+        <span class="room-ghost" aria-hidden="true">03</span>
+        <div class="room-meta"><b>R.03 / AFTER HOURS</b><i>18:04 · ROW 3 · STAY</i><p>Screensavers for an audience of chairs.</p></div>
+      </article>
+    </section>
+
+    <!-- 06 · DESK — sit down -->
+    <section class="desk" id="desk" data-chapter="06 · DESK" aria-labelledby="deskTitle">
+      <div class="wrap desk-grid">
+        <div class="desk-type">
+          <p class="engraved engraved-amber reveal">06 — DESK · SIT DOWN</p>
+          <h2 class="desk-title reveal" id="deskTitle">You are sitting<br />in front of it <em>again.</em></h2>
+          <p class="desk-note reveal">The chair still holds your shape. The keys remember your hands.</p>
+          <p class="desk-frag reveal">C:\home\you&gt; <span class="caret" aria-hidden="true">▌</span></p>
+        </div>
+        <figure class="desk-fig reveal">
+          <img data-parallax="0.08" src="https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1400&q=65" alt="Hands on a laptop keyboard late at night" loading="lazy" decoding="async" />
+          <span class="chip chip-a" aria-hidden="true">homework_final_FINAL.doc</span>
+          <span class="chip chip-b" aria-hidden="true">untitled (3).bmp</span>
+          <span class="chip chip-c" aria-hidden="true">47:12 remaining…</span>
+        </figure>
+      </div>
+    </section>
+
+    <!-- AFTER MIDNIGHT — the life, not the hardware -->
+    <section class="moments" id="moments" data-chapter="✳ AFTER MIDNIGHT" aria-labelledby="momentsTitle">
+      <div class="wrap">
+        <p class="engraved engraved-ice reveal">✳ AFTER MIDNIGHT · SOMEWHERE, 2003</p>
+        <h2 class="moments-title reveal" id="momentsTitle">after midnight.</h2>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&w=1600&q=60" alt="Friends crowded together around a small laptop screen" loading="lazy" decoding="async" />
+        <p class="mom-line">everyone crowded around the smallest screen in the house.</p>
+      </div>
+      <div class="mom mom-small mom-right reveal">
+        <img data-parallax="0.12" src="https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=800&q=60" alt="Worn keyboard keys catching the monitor light" loading="lazy" decoding="async" />
+        <p class="mom-line">you could hear every key at night.</p>
+      </div>
+      <div class="mom mom-mid reveal">
+        <img data-parallax="0.08" src="https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=1200&q=60" alt="A laptop glowing alone in a dark room" loading="lazy" decoding="async" />
+        <p class="mom-line">the screen was the nightlight.</p>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=1600&q=60" alt="Headphones waiting on a desk" loading="lazy" decoding="async" />
+        <p class="mom-line">one earbud each. that was the rule.</p>
+      </div>
+      <div class="mom mom-small reveal">
+        <img data-parallax="0.12" src="https://images.unsplash.com/photo-1502920917128-1aa500764cbd?auto=format&fit=crop&w=800&q=60" alt="Someone holding a small digital camera" loading="lazy" decoding="async" />
+        <p class="mom-line">taken without knowing we'd miss it.</p>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1600&q=60" alt="Morning desk with laptop, notebook and coffee" loading="lazy" decoding="async" />
+        <p class="mom-line">homework, music, games — somehow it all fit on this desk.</p>
+      </div>
+      <div class="mom mom-frag reveal" aria-hidden="true">
+        <span class="chip chip-static">song_final_REAL(3).mp3 — 47:12 remaining…</span>
+      </div>
+      <div class="mom mom-small mom-right reveal">
+        <img data-parallax="0.12" src="https://images.unsplash.com/photo-1517842645767-c639042777db?auto=format&fit=crop&w=800&q=60" alt="Handwritten study notes beside a keyboard" loading="lazy" decoding="async" />
+        <p class="mom-line">written down, in case the computer forgot.</p>
+      </div>
+      <div class="mom mom-full reveal">
+        <img data-parallax="0.05" src="https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=2000&q=65" alt="Laptop open on a desk in soft morning light" loading="lazy" decoding="async" />
+      </div>
+    </section>
+
+    <!-- SUNDAY, 4PM — the day, not the device -->
+    <section class="moments day" id="day" data-chapter="☀ SUNDAY, 4PM" aria-labelledby="dayTitle">
+      <div class="wrap">
+        <p class="engraved engraved-amber reveal">☀ SUNDAY, 4PM · NO CHARGERS NEEDED</p>
+        <h2 class="moments-title reveal" id="dayTitle">sunday, 4pm.</h2>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1600&q=60" alt="Lived-in living room in warm afternoon light" loading="lazy" decoding="async" />
+        <p class="mom-line">sunday afternoon. nobody was in a hurry.</p>
+      </div>
+      <div class="mom mom-small mom-right reveal">
+        <img data-parallax="0.12" src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=800&q=60" alt="School backpack dropped by the door" loading="lazy" decoding="async" />
+        <p class="mom-line">dropped by the door. homework could wait.</p>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=60" alt="Bright beach on a summer afternoon" loading="lazy" decoding="async" />
+        <p class="mom-line">august had no bedtime.</p>
+      </div>
+      <div class="mom mom-small reveal">
+        <img data-parallax="0.12" src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=60" alt="Morning coffee on a kitchen table" loading="lazy" decoding="async" />
+        <p class="mom-line">slow mornings.</p>
+      </div>
+      <div class="mom mom-mid reveal">
+        <img data-parallax="0.08" src="https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=60" alt="Unmade bed in soft daylight" loading="lazy" decoding="async" />
+        <p class="mom-line">the bed was a headquarters.</p>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1428592953211-077101b2021b?auto=format&fit=crop&w=1600&q=60" alt="Rain traced on a windowpane" loading="lazy" decoding="async" />
+        <p class="mom-line">some afternoons seemed to last forever.</p>
+      </div>
+      <div class="mom mom-small mom-right reveal">
+        <img data-parallax="0.12" src="https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=800&q=60" alt="Handwriting filling a notebook page" loading="lazy" decoding="async" />
+        <p class="mom-line">written down, because the day would blur.</p>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?auto=format&fit=crop&w=1600&q=60" alt="Friends together outside at golden hour" loading="lazy" decoding="async" />
+        <p class="mom-line">we always said we'd go home in a few minutes.</p>
+      </div>
+      <div class="mom mom-small reveal">
+        <img data-parallax="0.12" src="https://images.unsplash.com/photo-1485965120184-e220f721d03e?auto=format&fit=crop&w=800&q=60" alt="Bicycle leaning against a wall" loading="lazy" decoding="async" />
+        <p class="mom-line">the way home took the long way.</p>
+      </div>
+      <div class="mom mom-mid mom-right reveal">
+        <img data-parallax="0.08" src="https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=60" alt="Kitchen with someone's dinner preparations" loading="lazy" decoding="async" />
+        <p class="mom-line">someone was always cooking something.</p>
+      </div>
+      <div class="mom mom-small reveal">
+        <img data-parallax="0.12" src="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=800&q=60" alt="Library shelves full of books" loading="lazy" decoding="async" />
+        <p class="mom-line">the quiet floor.</p>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1543269865-cbf427effbad?auto=format&fit=crop&w=1600&q=60" alt="Students gathered around a table working together" loading="lazy" decoding="async" />
+        <p class="mom-line">group project. nobody did the project.</p>
+      </div>
+      <div class="mom mom-mid reveal">
+        <img data-parallax="0.08" src="https://images.unsplash.com/photo-1580582932707-520aed937b7b?auto=format&fit=crop&w=1200&q=60" alt="Empty classroom in afternoon light" loading="lazy" decoding="async" />
+        <p class="mom-line">five minutes between classes felt longer back then.</p>
+      </div>
+      <div class="mom mom-full reveal">
+        <img data-parallax="0.05" src="https://images.unsplash.com/photo-1470252649378-9c29740c9fa8?auto=format&fit=crop&w=2000&q=65" alt="Sun setting over an open field" loading="lazy" decoding="async" />
+      </div>
+    </section>
+
+    <!-- PAST CURFEW — outside -->
+    <section class="moments" id="outside" data-chapter="◐ PAST CURFEW" aria-labelledby="outsideTitle">
+      <div class="wrap">
+        <p class="engraved engraved-ice reveal">◐ PAST CURFEW · THE WORLD BEYOND THE ROOM</p>
+        <h2 class="moments-title reveal" id="outsideTitle">past curfew.</h2>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=1600&q=60" alt="Quiet street at dusk with lights coming on" loading="lazy" decoding="async" />
+        <p class="mom-line">the streetlights decided when to come home.</p>
+      </div>
+      <div class="mom mom-small mom-right reveal">
+        <img data-parallax="0.12" src="https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&w=800&q=60" alt="Basketball hoop on an empty court" loading="lazy" decoding="async" />
+        <p class="mom-line">one more game. always one more.</p>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1511882150382-421056c89033?auto=format&fit=crop&w=1600&q=60" alt="Rows of arcade cabinets glowing in the dark" loading="lazy" decoding="async" />
+        <p class="mom-line">four players. one working button.</p>
+      </div>
+      <div class="mom mom-small mom-right mom-lap reveal">
+        <img data-parallax="0.12" src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=60" alt="City bus waiting at dusk" loading="lazy" decoding="async" />
+        <p class="mom-line">the last bus smelled like rain.</p>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1439066615861-d1af74d74000?auto=format&fit=crop&w=1600&q=60" alt="Still lake under a wide summer sky" loading="lazy" decoding="async" />
+        <p class="mom-line">the water kept the summer after we left.</p>
+      </div>
+      <div class="mom mom-mid reveal">
+        <img data-parallax="0.08" src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=60" alt="Sunlight falling across a path through trees" loading="lazy" decoding="async" />
+        <p class="mom-line">a shortcut that wasn't.</p>
+      </div>
+      <div class="mom mom-wide reveal">
+        <img data-parallax="0.06" src="https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1600&q=60" alt="City skyline glittering at night" loading="lazy" decoding="async" />
+      </div>
+    </section>
+
+    <!-- ORDINARY DAYS — composed memory scenes -->
+    <section class="ordinary" id="ordinary" data-chapter="◍ ORDINARY DAYS" aria-labelledby="ordinaryTitle">
+      <div class="wrap">
+        <p class="engraved engraved-amber reveal">◍ ORDINARY DAYS · NOTHING SPECIAL HAPPENED</p>
+        <h2 class="moments-title reveal" id="ordinaryTitle">ordinary days.</h2>
+      </div>
+      <div class="wrap">
+        <article class="mscene reveal">
+          <figure class="mscene-env">
+            <img data-parallax="0.06" src="https://images.unsplash.com/photo-1471107340929-a87cd0f5b5f3?auto=format&fit=crop&w=1400&q=60" alt="Desk covered with notebooks and pens in lamplight" loading="lazy" decoding="async" />
+          </figure>
+          <div class="mscene-side">
+            <p class="mscene-time">19:40 · MATH, P. 44</p>
+            <p class="mscene-line">the lamp buzzed. the problems didn't solve themselves.</p>
+          </div>
+        </article>
+        <article class="mscene mscene-flip reveal">
+          <figure class="mscene-env">
+            <img data-parallax="0.06" src="https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=1400&q=60" alt="Old piano keyboard in a quiet room" loading="lazy" decoding="async" />
+            <img class="mscene-detail" src="https://images.unsplash.com/photo-1507838153414-b4b713384a76?auto=format&fit=crop&w=500&q=55" alt="Sheet music with practiced passages marked" loading="lazy" decoding="async" />
+          </figure>
+          <div class="mscene-side">
+            <p class="mscene-time">HALF AN HOUR · TIMED</p>
+            <p class="mscene-line">scales first. the song afterwards was the reward.</p>
+          </div>
+        </article>
+      </div>
+      <div class="mscene-full reveal">
+        <img data-parallax="0.05" src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=2000&q=65" alt="Empty cinema seats facing a glowing screen" loading="lazy" decoding="async" />
+        <p class="mscene-line mscene-line-over">we stayed through the credits to hear the song again.</p>
+      </div>
+      <div class="wrap">
+        <article class="mscene reveal">
+          <figure class="mscene-env">
+            <img data-parallax="0.06" src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=1400&q=60" alt="Shopfront glowing on a Saturday evening street" loading="lazy" decoding="async" />
+            <img class="mscene-detail" src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&w=500&q=55" alt="Clothes racks inside a familiar store" loading="lazy" decoding="async" />
+          </figure>
+          <div class="mscene-side">
+            <p class="mscene-time">SATURDAY · NO MONEY</p>
+            <p class="mscene-line">we went to look at everything and buy nothing.</p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- 07 · DESKTOP — use it -->
+    <section class="deskcomp" id="desktop" data-chapter="07 · DESKTOP" aria-labelledby="desktopTitle">
+      <div class="wrap">
+        <p class="engraved engraved-ice reveal">07 — DESKTOP · DOUBLE-CLICK ANYTHING</p>
+        <h2 class="deskcomp-title reveal" id="desktopTitle">It still <em>works.</em></h2>
+        <p class="deskcomp-note reveal">Folders, files, a browser, messages, a game. Everything you left open in 2003 is still open. Someone has to close it. Not you. Not yet.</p>
+      </div>
+      <div class="wrap">
+        <div class="pcdisplay rivets reveal">
+          <div class="pcscreen" id="pcscreen">
+            <div class="wallpaper" aria-hidden="true"></div>
+            <div class="icons" id="deskIcons" role="list" aria-label="Desktop icons"></div>
+            <div class="wins" id="deskWins"></div>
+            <div class="post" id="deskPost" hidden>
+              <p>CA-2001 BIOS · CHECKING MEMORY … 640K OK<br />LOADING FAMILY EDITION …<br /><span>click anywhere to skip</span></p>
+            </div>
+            <div class="toast" id="deskToast" hidden>
+              <button id="deskToastBtn" type="button" data-hover><b>◉ sara is online</b><span>say hi — messages</span></button>
+              <button id="deskToastX" type="button" aria-label="Dismiss notification" data-hover>✕</button>
+            </div>
+            <div class="taskbar">
+              <button class="startbtn" id="startBtn" type="button" aria-haspopup="menu" aria-expanded="false" data-hover>▞ START</button>
+              <div class="desk-tray" id="deskTray" aria-label="Open windows"></div>
+              <button class="trayico" id="netIco" type="button" title="Network: 56k connected — open the forum" aria-label="Network status: connected. Open the forum." data-hover>▂▄▆</button>
+              <button class="trayico" id="volIco" type="button" title="Room tone on/off" aria-label="Toggle room tone" aria-pressed="false" data-hover>♪</button>
+              <span class="lcd lcd-desk" id="deskClock" title="Computer clock">--:--</span>
+            </div>
+            <div class="startmenu" id="startMenu" role="menu" hidden></div>
+          </div>
+          <p class="crt-caption">FIG. 07 — THE FAMILY COMPUTER. NOTHING WAS EVER DELETED.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 08 · MUSIC — the mixtape -->
+    <section class="mixtape" id="music" data-chapter="08 · MUSIC" aria-labelledby="musicTitle">
+      <div class="wrap mixtape-inner">
+        <p class="engraved engraved-amber reveal">08 — MUSIC · SIDE B</p>
+        <div class="mixtape-orb reveal">
+          <img src="https://images.unsplash.com/photo-1484704849700-f032a568e944?auto=format&fit=crop&w=900&q=60" alt="Old headphones resting in the dark" loading="lazy" decoding="async" />
+        </div>
+        <h2 class="mixtape-title reveal" id="musicTitle">The mixtape <em>survived.</em></h2>
+        <p class="mixtape-note reveal">Fifteen songs. One of them was playing that night. It is still playing.</p>
+        <div class="reveal"><button class="key key-big" id="playFoundSong" type="button" data-hover>▶ PLAY THE FOUND SONG</button></div>
+      </div>
+    </section>
+
+    <!-- 09 · SIGNAL LAB — the song fades into static -->
+    <section class="lab" id="lab" data-chapter="09 · SIGNAL LAB" aria-labelledby="lab-title">
+      <div class="wrap">
+        <p class="engraved engraved-rust reveal">09 — SIGNAL LAB · THE NETWORK HUMS</p>
+        <h2 class="lab-title reveal" id="lab-title">Tune the <em>static.</em></h2>
+        <p class="lab-note reveal">Pick a channel — the scope listens. Sound stays off until you ask.</p>
+        <div class="console rivets reveal">
+          <div class="console-controls">
+            <p class="deck-label">CHANNEL <span class="led led-red" aria-hidden="true"></span></p>
+            <div class="chan-row" role="group" aria-label="Signal channels">
+              <button class="chan is-active" type="button" data-freq="50" data-label="CRT HUM · 50Hz" data-hover>CH-01<br /><span>CRT HUM</span></button>
+              <button class="chan" type="button" data-freq="440" data-label="DIAL TONE · 440Hz" data-hover>CH-02<br /><span>DIAL TONE</span></button>
+              <button class="chan" type="button" data-freq="1400" data-label="HANDSHAKE · 1400Hz" data-hover>CH-03<br /><span>HANDSHAKE</span></button>
+            </div>
+            <label class="tune" for="tuneRange">DRIFT
+              <input type="range" id="tuneRange" min="0" max="100" value="28" data-hover />
+            </label>
+            <button class="btn btn-solid btn-small" id="signalSoundBtn" type="button" aria-pressed="false" data-hover>Listen to this channel</button>
+            <div class="signal-log" aria-live="polite">
+              <p class="deck-label">LOG</p>
+              <ul id="signalLog"><li><span>00:00:01</span> scope armed — waiting for operator</li></ul>
+            </div>
+          </div>
+          <div class="console-scope">
+            <div class="scope-head"><span id="scopeLabel">CRT HUM · 50Hz</span><span class="scope-live"><i aria-hidden="true"></i>LIVE</span></div>
+            <div class="scope-bezel"><canvas id="scope" width="900" height="420" aria-label="Oscilloscope visualization of the selected channel" role="img"></canvas></div>
+            <div class="scope-foot"><span id="scopeFreq">50.0 Hz</span><span id="scopeState">SILENT — VISUAL ONLY</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- riveted divider -->
+    <div class="ticker-plate rivets" aria-hidden="true">
+      <div class="ticker-track">
+        <span>MEMORY FOUND <i>///</i> SYSTEM ONLINE <i>///</i> 56K HANDSHAKE <i>///</i> DO NOT POWER DOWN <i>///</i> THE TUBE IS WARM <i>///</i> SIGNAL HELD <i>///</i>&nbsp;</span><span>MEMORY FOUND <i>///</i> SYSTEM ONLINE <i>///</i> 56K HANDSHAKE <i>///</i> DO NOT POWER DOWN <i>///</i> THE TUBE IS WARM <i>///</i> SIGNAL HELD <i>///</i>&nbsp;</span>
+      </div>
+    </div>
+
+    <!-- 10 · VAULT -->
+    <section class="vault" id="vault" data-chapter="10 · VAULT" aria-labelledby="vault-title">
+      <div class="wrap">
+            <p class="engraved engraved-amber reveal">10 — VAULT · PULL A TRAY</p>
+        <h2 class="vault-title reveal" id="vault-title">Everything here<br />still holds a <em>charge.</em></h2>
+        <p class="vault-bridge reveal">the static settled. these stayed.</p>
+        <ol class="tray-list">
+          <li class="tray reveal">
+            <button class="tray-row" type="button" aria-expanded="false" data-preview="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=900&q=60" data-hover>
+              <span class="m-index">M.01</span><span class="m-name">The Family Computer</span><span class="m-year">1998</span><span class="m-tag">SHARED · LOUD FAN</span><span class="m-plus" aria-hidden="true">+</span>
+            </button>
+            <div class="tray-detail" hidden><div class="tray-detail-grid">
+              <p>One machine for the whole house, in the coldest corner of it. Homework, homework-adjacent games, and a screensaver of pipes everyone watched like television.</p>
+              <dl><div><dt>RELIC</dt><dd>Beige tower · ball mouse</dd></div><div><dt>SOUND</dt><dd>Dial tone → handshake → freedom</dd></div></dl>
+            </div></div>
+          </li>
+          <li class="tray reveal">
+            <button class="tray-row" type="button" aria-expanded="false" data-preview="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=900&q=60" data-hover>
+              <span class="m-index">M.02</span><span class="m-name">Dial-Up Night</span><span class="m-year">1999</span><span class="m-tag">56K · AFTER 11PM</span><span class="m-plus" aria-hidden="true">+</span>
+            </button>
+            <div class="tray-detail" hidden><div class="tray-detail-grid">
+              <p>Cheap-rate hours. The handshake screech meant nobody could call the house — a small, negotiated loneliness. Pages arrived line by line, and every image felt earned.</p>
+              <dl><div><dt>RELIC</dt><dd>56k modem · phone splitter</dd></div><div><dt>RATE</dt><dd>4.2 KB/s on a good night</dd></div></dl>
+            </div></div>
+          </li>
+          <li class="tray reveal">
+            <button class="tray-row" type="button" aria-expanded="false" data-preview="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=60" data-hover>
+              <span class="m-index">M.03</span><span class="m-name">1.44 MB of Everything</span><span class="m-year">1997</span><span class="m-tag">FLOPPY · LABELED BY HAND</span><span class="m-plus" aria-hidden="true">+</span>
+            </button>
+            <div class="tray-detail" hidden><div class="tray-detail-grid">
+              <p>Your whole world had to fit on a square of plastic. Each disk labeled in marker, each one a little ark. The shutter sound meant: handled with care.</p>
+              <dl><div><dt>RELIC</dt><dd>3.5″ floppy · disk box of 10</dd></div><div><dt>CAPACITY</dt><dd>1.44 MB · infinite, somehow</dd></div></dl>
+            </div></div>
+          </li>
+          <li class="tray reveal">
+            <button class="tray-row" type="button" aria-expanded="false" data-preview="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=900&q=60" data-hover>
+              <span class="m-index">M.04</span><span class="m-name">The CRT Glow</span><span class="m-year">2001</span><span class="m-tag">60Hz · WARM GLASS</span><span class="m-plus" aria-hidden="true">+</span>
+            </button>
+            <div class="tray-detail" hidden><div class="tray-detail-grid">
+              <p>The monitor was a lamp before it was a screen. It hummed, it degaussed with a satisfying <i>thunk</i>, and it painted the whole room blue at 2 AM.</p>
+              <dl><div><dt>RELIC</dt><dd>17″ CRT · 12 kg of comfort</dd></div><div><dt>GLOW</dt><dd>#9fd8ff at midnight</dd></div></dl>
+            </div></div>
+          </li>
+          <li class="tray reveal">
+            <button class="tray-row" type="button" aria-expanded="false" data-preview="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=60" data-hover>
+              <span class="m-index">M.05</span><span class="m-name">Pocket Songs, 128 kbps</span><span class="m-year">2003</span><span class="m-tag">MP3 · 64 MB</span><span class="m-plus" aria-hidden="true">+</span>
+            </button>
+            <div class="tray-detail" hidden><div class="tray-detail-grid">
+              <p>Fifteen songs, chosen like a message in a bottle. The hiss between tracks, the ritual of ripping a CD a friend lent you and never returned.</p>
+              <dl><div><dt>RELIC</dt><dd>MP3 player · wired buds</dd></div><div><dt>BITRATE</dt><dd>128 kbps · perfect, actually</dd></div></dl>
+            </div></div>
+          </li>
+          <li class="tray reveal">
+            <button class="tray-row" type="button" aria-expanded="false" data-preview="https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=60" data-hover>
+              <span class="m-index">M.06</span><span class="m-name">First Digital Photo</span><span class="m-year">2002</span><span class="m-tag">1.3 MP · FLASH ALWAYS ON</span><span class="m-plus" aria-hidden="true">+</span>
+            </button>
+            <div class="tray-detail" hidden><div class="tray-detail-grid">
+              <p>Grainy, blown out, timestamped in orange — and completely precious. The future had arrived, blurry and wonderful.</p>
+              <dl><div><dt>RELIC</dt><dd>Compact digicam · 16 MB card</dd></div><div><dt>RESOLUTION</dt><dd>1280 × 960 · enough</dd></div></dl>
+            </div></div>
+          </li>
+        </ol>
+      </div>
+      <div class="preview" id="memoryPreview" aria-hidden="true"><img alt="" /></div>
+    </section>
+
+    <!-- INTERLUDE -->
+    <section class="impact" aria-label="Interlude: some rooms never log off">
+      <figure class="impact-bg">
+        <img data-parallax="0.08" src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2200&q=70" alt="Shelves of retro gaming hardware glowing with color in the dark" loading="lazy" decoding="async" />
+      </figure>
+      <div class="impact-shade" aria-hidden="true"></div>
+      <div class="wrap impact-inner">
+        <p class="engraved reveal">INTERLUDE — FULL VOLUME</p>
+        <h2 class="impact-title reveal">Some rooms<br />never log off.</h2>
+      </div>
+    </section>
+
+    <!-- 11 · FINDS — drift field, not a grid -->
+    <section class="finds" id="finds" data-chapter="11 · FINDS" aria-labelledby="finds-title">
+      <div class="wrap">
+          <p class="engraved reveal">11 — FINDS · RECOVERED WHILE DRIFTING</p>
+        <h2 class="finds-title reveal" id="finds-title">Lost, then<br /><em>found.</em></h2>
+      </div>
+      <div class="drift">
+        <button class="drift-item drift-wide reveal" type="button" data-hover data-title="Dial tone" data-meta="1999 · INTERFACE · NIGHT LINE · CA.1999.056" data-full="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=2000&q=75">
+          <img data-parallax="0.06" src="https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=1400&q=60" alt="Green terminal text glowing on a black screen" loading="lazy" decoding="async" />
+          <span class="drift-cap"><b>Dial tone</b><i>1999</i></span>
+        </button>
+        <button class="drift-item drift-small reveal" type="button" data-hover data-title="The bench" data-meta="1999 · WORKSTATION · ASSEMBLY 02 · CA.1999.002" data-full="https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=2000&q=75">
+          <img data-parallax="0.11" src="https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=800&q=60" alt="Hands assembling a computer on a workbench" loading="lazy" decoding="async" />
+          <span class="drift-cap"><b>The bench</b><i>1999</i></span>
+        </button>
+        <button class="drift-item drift-mid reveal" type="button" data-hover data-title="The desk, 2002" data-meta="2002 · HOME · STILL THERE · CA.2002.014" data-full="https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=2000&q=75" aria-label="Inspect find: The desk, 2002">
+          <img data-parallax="0.1" src="https://images.unsplash.com/photo-1591488320449-011701bb6704?auto=format&fit=crop&w=1000&q=60" alt="Old desktop computer set up on a lived-in desk" loading="lazy" decoding="async" />
+          <span class="drift-cap"><b>The desk, 2002</b><i>2002</i></span>
+        </button>
+        <button class="drift-item drift-wide reveal" type="button" data-hover data-title="Sunday, inside" data-meta="2001 · HOME · NOBODY HURRYING · CA.2001.041" data-full="https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=2000&q=75">
+          <img data-parallax="0.08" src="https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=1000&q=60" alt="Warm lived-in living room in afternoon light" loading="lazy" decoding="async" />
+          <span class="drift-cap"><b>Sunday, inside</b><i>2001</i></span>
+        </button>
+        <button class="drift-item drift-wide drift-right reveal" type="button" data-hover data-title="Midnight compiler" data-meta="2001 · INTERFACE · NIGHT SHIFT · CA.2001.033" data-full="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=2000&q=75">
+          <img data-parallax="0.05" src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?auto=format&fit=crop&w=1400&q=60" alt="Lines of code on a dark monitor" loading="lazy" decoding="async" />
+          <span class="drift-cap"><b>Midnight compiler</b><i>2001</i></span>
+        </button>
+        <button class="drift-item drift-mid reveal" type="button" data-hover data-title="First digital photo" data-meta="2002 · CAMERA · 1.3 MP · CA.2002.009" data-full="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=2000&q=75">
+          <img data-parallax="0.12" src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?auto=format&fit=crop&w=1000&q=60" alt="Early digital camera, remembered in warm light" loading="lazy" decoding="async" />
+          <span class="drift-cap"><b>First digital photo</b><i>2002</i></span>
+        </button>
+        <button class="drift-item drift-small drift-right reveal" type="button" data-hover data-title="The quiet room" data-meta="2002 · HOME · AFTER DINNER · CA.2002.017" data-full="https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=2000&q=75">
+          <img data-parallax="0.15" src="https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=60" alt="Quiet room resting in soft evening light" loading="lazy" decoding="async" />
+          <span class="drift-cap"><b>The quiet room</b><i>2002</i></span>
+        </button>
+        <button class="drift-item drift-small drift-right reveal" type="button" data-hover data-title="August, lights off" data-meta="2003 · NIGHT · WINDOW OPEN · CA.2003.008" data-full="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=2000&q=75">
+          <img data-parallax="0.14" src="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=800&q=60" alt="Stars scattered across a clear night sky" loading="lazy" decoding="async" />
+          <span class="drift-cap"><b>August, lights off</b><i>2003</i></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- 12 · SURFACE -->
+    <section class="surface" id="leave" data-chapter="12 · SURFACE" aria-labelledby="surface-title">
+        <p class="engraved reveal">12 — SURFACE · STAY OR GO</p>
+      <h2 class="surface-title reveal" id="surface-title">You can log off.<br /><span>The room stays on.</span></h2>
+      <div class="surface-actions reveal">
+        <a class="key" href="#signal" data-hover>↑ RESURFACE</a>
+        <button class="mains-switch" id="powerBtn" type="button" aria-pressed="false" data-hover>
+          <span class="switch-slot" aria-hidden="true"><span class="switch-lever"></span></span>
+          <b id="powerBtnLabel">POWER DOWN THE GLOW</b>
+        </button>
+      </div>
+      <footer class="foot">
+        <span>© 1998–2026 CYBERCORE</span>
+        <span class="dim">ONE FILE · ONE SHEET · ONE SCRIPT · NO ANALYTICS · ONLY DUST</span>
+        <span>IMAGERY VIA UNSPLASH ARTISTS</span>
+      </footer>
+    </section>
+  </main>
+
+  <!-- LIGHTBOX -->
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lbTitle" hidden>
+    <div class="lb-backdrop" data-lb-close></div>
+    <figure class="lb-frame rivets">
+      <img id="lbImg" alt="" />
+      <figcaption class="lb-cap">
+        <span><b id="lbTitle"></b><i id="lbMeta"></i></span>
+        <span class="lb-count" id="lbCount"></span>
+      </figcaption>
+      <div class="lb-bar">
+        <button class="lb-btn" id="lbPrev" type="button" data-hover aria-label="Previous find">← PREV</button>
+        <button class="lb-btn" id="lbClose" type="button" data-hover aria-label="Close viewer">CLOSE ✕</button>
+        <button class="lb-btn" id="lbNext" type="button" data-hover aria-label="Next find">NEXT →</button>
+      </div>
+    </figure>
+  </div>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
