@@ -504,16 +504,12 @@
     trackBtns.forEach((b) => b.classList.toggle("is-active", parseInt(b.dataset.track, 10) === songIdx));
   }
 
-  const nowPlaying = $("#nowPlaying");
   let songAutoDone = false, songStarted = false;
 
   function setSongUI(state) { // 1 playing, 2 paused, 3 buffering
     const playing = state === 1 || state === 3;
     if (playing) {
       songStarted = true;
-      if (nowPlaying) nowPlaying.hidden = false;
-    } else if (state === 2 || state === 0) {
-      if (nowPlaying) nowPlaying.hidden = true;
     }
     if (songPlay) {
       songPlay.textContent = playing ? "\u275A\u275A PAUSE" : "\u25B6 PLAY";
@@ -625,9 +621,6 @@
     const wait = Math.max(0, 5000 - (Date.now() - t0));
     window.setTimeout(attemptSongAuto, wait);
   }
-  nowPlaying?.addEventListener("click", () => {
-    if (musicDeck) { musicDeck.hidden = false; musicBtn?.setAttribute("aria-expanded", "true"); }
-  });
   loadYtApi(); // warm the player early so the delayed start is instant
 
   /* ---------- 13. FINDS LIGHTBOX ---------- */
