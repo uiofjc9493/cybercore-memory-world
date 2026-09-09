@@ -83,12 +83,60 @@ a clear ▶ PLAY — one tap and you're in.
 - Imagery hotlinked from the Unsplash CDN (credited below); the world degrades
   gracefully offline into gradients rather than broken boxes.
 
-## Run it locally
+## Run it locally (على جهازك)
 
+You need **any one** of these — pick the line you understand:
+
+**Option 1 — Node (easiest, uses the included server):**
 ```bash
-# any static server works, or use the included one:
-node serve.js        # → http://localhost:8471
+cd cybercore-memory-world
+node serve.js
+# open → http://localhost:8471
 ```
+> Requires [Node.js](https://nodejs.org/) installed. To stop the server: `Ctrl + C`.
+
+**Option 2 — Python (no install if you have Python):**
+```bash
+cd cybercore-memory-world
+python -m http.server 8471
+# open → http://localhost:8471
+```
+
+**Option 3 — VS Code:**
+Install the *Live Server* extension → right-click `index.html` → **Open with Live Server**.
+
+> Why a server and not double-clicking the file? Everything works either way,
+> but some browsers restrict features on `file://` pages. A local server takes
+> ten seconds and behaves exactly like the deployed site.
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| Port already in use | Run `node serve.js 8080` (or any free port) |
+| Images/fonts don't load | They come from the internet (Unsplash / Google Fonts) — check your connection; offline, the world falls back to gradients |
+| No music | Songs stream from YouTube — needs connection; browsers also block sound until you press ▶ PLAY once |
+| `node` not recognized | Install Node.js LTS from nodejs.org, restart the terminal |
+
+## FAQ — أسئلة سريعة
+
+**Does it send my data anywhere?**
+No. No analytics, no cookies, no accounts, no backend. The only network
+requests are images (Unsplash), fonts (Google), and the songs (YouTube).
+
+**Why doesn't music start by itself?**
+Browsers forbid sound before you interact — that's their rule, not ours.
+The world tries once a few seconds in; otherwise the deck opens itself with
+a clear ▶ PLAY. One tap and it plays.
+
+**Can I use the photos / songs elsewhere?**
+Photos belong to their Unsplash artists (free to use under the Unsplash
+license — check each photo's page). Songs belong to their labels; here they
+play only through official YouTube embeds.
+
+**Which browsers work?**
+Any modern Chrome, Edge, Firefox or Safari (2023+). Older browsers still show
+every scene statically — the journey never breaks, it just moves less.
 
 ## Project map
 
@@ -97,6 +145,7 @@ index.html   — the whole world (chapters, desktop shell, deck, dialogs)
 styles.css   — the material system (chrome, alloy, CRT glass, plastic)
 app.js       — the engine (scenes, desktop OS, games, instruments, embeds)
 serve.js     — tiny local dev server (not needed in production)
+README.md    — this file
 ```
 
 ## Credits
