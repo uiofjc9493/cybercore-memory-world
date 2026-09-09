@@ -370,8 +370,15 @@
     drift = parseInt(tune.value, 10) / 100;
     if (scopeFreq) scopeFreq.textContent = `${(baseFreq * (1 + (drift - 0.28) * 0.4)).toFixed(1)} Hz`;
   });
+  let scopeVisible = true;
+  if ("IntersectionObserver" in window && scope) {
+    new IntersectionObserver((entries) => {
+      scopeVisible = entries.some((e) => e.isIntersecting);
+    }).observe(scope);
+  }
   function drawScope() {
     if (!scope || !ctx) return;
+    if (scopeVisible && !document.hidden) {
     const W = scope.width, H = scope.height;
     ctx.fillStyle = "#030507";
     ctx.fillRect(0, 0, W, H);
@@ -400,6 +407,7 @@
     ctx.strokeStyle = "rgba(140,255,158,0.35)";
     ctx.lineWidth = 1;
     ctx.stroke();
+    } // end visibility gate: skip paint work off-screen, keep the loop cheap
     if (!reducedMotion) {
       phase += 0.045 + drift * 0.05;
       requestAnimationFrame(drawScope);
@@ -501,7 +509,11 @@
     if (songTitle) songTitle.textContent = s.title;
     if (songSub) songSub.textContent = s.sub;
     if (songWatch) songWatch.href = s.watch;
-    trackBtns.forEach((b) => b.classList.toggle("is-active", parseInt(b.dataset.track, 10) === songIdx));
+    trackBtns.forEach((b) => {
+      const active = parseInt(b.dataset.track, 10) === songIdx;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-pressed", String(active));
+    });
   }
 
   let songAutoDone = false, songStarted = false;

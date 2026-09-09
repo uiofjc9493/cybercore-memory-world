@@ -18,10 +18,17 @@ const TYPES = {
 
 http
   .createServer((req, res) => {
-    let urlPath = decodeURIComponent(req.url.split("?")[0]);
+    let urlPath;
+    try {
+      urlPath = decodeURIComponent(req.url.split("?")[0]);
+    } catch {
+      res.writeHead(400, { "Content-Type": "text/plain" });
+      res.end("bad request");
+      return;
+    }
     if (urlPath === "/") urlPath = "/index.html";
     const file = path.normalize(path.join(ROOT, urlPath));
-    if (!file.startsWith(ROOT)) {
+    if (file !== ROOT && !file.startsWith(ROOT + path.sep)) {
       res.writeHead(403);
       res.end("forbidden");
       return;
