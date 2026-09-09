@@ -468,6 +468,9 @@
     musicDeck.hidden = !open;
     musicBtn.setAttribute("aria-expanded", String(open));
   });
+  document.querySelector("#deckClose")?.addEventListener("click", () => {
+    if (musicDeck) { musicDeck.hidden = true; musicBtn?.setAttribute("aria-expanded", "false"); }
+  });
   /* deck transport lives on the transmission block below. */
 
   /* ---------- 12c. TRANSMISSION: official YouTube signal ----------
