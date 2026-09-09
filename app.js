@@ -694,6 +694,7 @@
   }
 
   const soundPrompt = $("#soundPrompt");
+  const nowPlaying = $("#nowPlaying");
   let songAutoDone = false, songStarted = false;
 
   function setSongUI(state) { // 1 playing, 2 paused, 3 buffering
@@ -701,6 +702,9 @@
     if (playing) {
       songStarted = true;
       if (soundPrompt) soundPrompt.hidden = true;
+      if (nowPlaying) nowPlaying.hidden = false;
+    } else if (state === 2 || state === 0) {
+      if (nowPlaying) nowPlaying.hidden = true;
     }
     if (songPlay) {
       songPlay.textContent = playing ? "\u275A\u275A PAUSE" : "\u25B6 PLAY";
@@ -814,6 +818,9 @@
       if (ytPlayer && ytReady) ytPlayer.playVideo();
       else playTrack(songIdx);
     } catch { /* ignore */ }
+  });
+  nowPlaying?.addEventListener("click", () => {
+    if (musicDeck) { musicDeck.hidden = false; musicBtn?.setAttribute("aria-expanded", "true"); }
   });
   loadYtApi(); // warm the player early so the delayed start is instant
 
