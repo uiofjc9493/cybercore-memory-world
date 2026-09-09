@@ -116,10 +116,7 @@
   if ("IntersectionObserver" in window && chapterLcd && chapterEls.length) {
     const spy = new IntersectionObserver(
       (entries) => entries.forEach((e) => {
-        if (e.isIntersecting) {
-          chapterLcd.textContent = e.target.dataset.chapter || "";
-          onChapterChange(e.target.dataset.chapter || "");
-        }
+        if (e.isIntersecting) chapterLcd.textContent = e.target.dataset.chapter || "";
       }),
       { rootMargin: "-45% 0px -45% 0px" }
     );
@@ -411,11 +408,8 @@
   drawScope();
 
   /* ---------- 12. AUDIO ---------- */
-  let actx = null, master = null, humOsc = null, humGain = null, noiseGain = null, chanOsc = null, chanGain = null;
-  let audioOn = false;
+  let actx = null, master = null, chanOsc = null, chanGain = null;
   let chanOn = false;
-  const soundToggle = $("#soundToggle");
-  const soundLabel = $("#soundLabel");
   const signalSoundBtn = $("#signalSoundBtn");
   function ensureAudio() {
     if (actx) return true;
@@ -426,48 +420,12 @@
       master = actx.createGain();
       master.gain.value = 0.0;
       master.connect(actx.destination);
-      humOsc = actx.createOscillator();
-      humOsc.type = "sine";
-      humOsc.frequency.value = 50;
-      humGain = actx.createGain();
-      humGain.gain.value = 0.05;
-      humOsc.connect(humGain).connect(master);
-      humOsc.start();
-      const len = actx.sampleRate * 2;
-      const buf = actx.createBuffer(1, len, actx.sampleRate);
-      const d = buf.getChannelData(0);
-      let last = 0;
-      for (let i = 0; i < len; i++) {
-        const white = Math.random() * 2 - 1;
-        last = (last + 0.02 * white) / 1.02;
-        d[i] = last * 3.2;
-      }
-      const src = actx.createBufferSource();
-      src.buffer = buf; src.loop = true;
-      const lp = actx.createBiquadFilter();
-      lp.type = "lowpass"; lp.frequency.value = 420;
-      noiseGain = actx.createGain();
-      noiseGain.gain.value = 0.05;
-      src.connect(lp).connect(noiseGain).connect(master);
-      src.start();
       return true;
     } catch { return false; }
   }
   function retuneOsc() {
     if (!actx || !chanOsc) return;
     chanOsc.frequency.setTargetAtTime(baseFreq, actx.currentTime, 0.05);
-  }
-  function setRoomTone(on) {
-    if (on && !ensureAudio()) { logLine("audio unavailable in this browser"); return; }
-    audioOn = on;
-    actx?.resume?.();
-    const t = actx.currentTime;
-    master.gain.cancelScheduledValues(t);
-    master.gain.setTargetAtTime(on ? 0.5 : 0.0, t, 0.4);
-    soundToggle?.setAttribute("aria-pressed", String(on));
-    if (soundLabel) soundLabel.textContent = on ? "SOUND ON" : "SOUND OFF";
-    if (scopeState) scopeState.textContent = on || chanOn ? "AUDIBLE · LOW HUM" : "SILENT — VISUAL ONLY";
-    logLine(on ? "room tone on — hum + air" : "room tone off — visual only");
   }
   function setChannelListen(on) {
     if (on && !ensureAudio()) { logLine("audio unavailable in this browser"); return; }
@@ -483,167 +441,26 @@
       chanOsc.connect(chanGain).connect(master);
       chanOsc.start();
       chanGain.gain.setTargetAtTime(0.16, t, 0.2);
-      if (!audioOn) { master.gain.setTargetAtTime(0.5, t, 0.3); }
+      master.gain.setTargetAtTime(0.5, t, 0.3);
     } else {
       chanGain?.gain.setTargetAtTime(0.0, t, 0.15);
       const osc = chanOsc;
       setTimeout(() => { try { osc?.stop(); } catch {} }, 600);
-      if (!audioOn) master?.gain.setTargetAtTime(0.0, t, 0.3);
+      master?.gain.setTargetAtTime(0.0, t, 0.3);
       chanOsc = null;
     }
     signalSoundBtn?.setAttribute("aria-pressed", String(on));
     if (signalSoundBtn) signalSoundBtn.textContent = on ? "Mute this channel" : "Listen to this channel";
-    if (scopeState) scopeState.textContent = on || audioOn ? "AUDIBLE · LOW HUM" : "SILENT — VISUAL ONLY";
+    if (scopeState) scopeState.textContent = on ? "AUDIBLE · LAB TONE" : "SILENT — VISUAL ONLY";
     logLine(on ? `listening → ${baseFreq}Hz (generated)` : "channel muted");
   }
-  soundToggle?.addEventListener("click", () => setRoomTone(!audioOn));
   signalSoundBtn?.addEventListener("click", () => setChannelListen(!chanOn));
 
-  /* ---------- 12b. AMBIENT MUSIC: original generative score ----------
-     No audio files, no streams, no licensing footprint: soft pads,
-     distant pentatonic tones and room air, synthesized live. */
-  const PROG = [
-    { name: "SIDE A — \u201CTUBE WARMTH\u201D", notes: [110, 164.81, 196, 246.94, 293.66] },
-    { name: "SIDE A — \u201CFLUORESCENT HALL\u201D", notes: [87.31, 130.81, 164.81, 196, 246.94] },
-    { name: "SIDE B — \u201CDIAL-TONE LULLABY\u201D", notes: [130.81, 164.81, 196, 246.94, 329.63] },
-    { name: "SIDE B — \u201CSTANDBY HEART\u201D", notes: [98, 146.83, 196, 246.94, 293.66] },
-  ];
-  const PLUCK_SCALE = [220, 261.63, 293.66, 329.63, 392, 440, 523.25, 587.33];
-  const MUSIC = { on: false, muted: false, vol: 0.55, duck: 1, chord: 0, built: false,
-    bus: null, padFilter: null, delay: null, padTimer: null, pluckTimer: null, lastShimmer: 0 };
+  /* ---------- 12b. MUSIC DECK ---------- */
   const musicBtn = $("#musicBtn");
   const musicDeck = $("#musicDeck");
-  const musicPlay = $("#musicPlay");
-  const musicMute = $("#musicMute");
-  const musicVol = $("#musicVol");
-  const musicTrackLabel = $("#musicTrackLabel");
-  const musicLed = $("#musicLed");
-  const musicDeckLed = $("#musicDeckLed");
 
-  function buildMusicGraph() {
-    if (MUSIC.built || !actx) return;
-    MUSIC.bus = actx.createGain();
-    MUSIC.bus.gain.value = 0.0;
-    MUSIC.bus.connect(actx.destination); // independent of the room-tone master
-    // dreamy space: filtered feedback delay
-    MUSIC.delay = actx.createDelay(1.5);
-    MUSIC.delay.delayTime.value = 0.42;
-    const fb = actx.createGain(); fb.gain.value = 0.38;
-    const damp = actx.createBiquadFilter(); damp.type = "lowpass"; damp.frequency.value = 1200;
-    const wet = actx.createGain(); wet.gain.value = 0.5;
-    MUSIC.delay.connect(damp); damp.connect(fb); fb.connect(MUSIC.delay);
-    MUSIC.delay.connect(wet); wet.connect(MUSIC.bus);
-    // breathing pad filter
-    MUSIC.padFilter = actx.createBiquadFilter();
-    MUSIC.padFilter.type = "lowpass"; MUSIC.padFilter.frequency.value = 700; MUSIC.padFilter.Q.value = 0.5;
-    MUSIC.padFilter.connect(MUSIC.bus);
-    MUSIC.padFilter.connect(MUSIC.delay);
-    const lfo = actx.createOscillator(); lfo.frequency.value = 0.06;
-    const lfoAmt = actx.createGain(); lfoAmt.gain.value = 260;
-    lfo.connect(lfoAmt); lfoAmt.connect(MUSIC.padFilter.frequency);
-    lfo.start();
-    MUSIC.built = true;
-  }
-
-  function padChord(notes) {
-    if (!actx || !MUSIC.padFilter) return;
-    const t = actx.currentTime;
-    notes.forEach((fq) => {
-      const osc = actx.createOscillator();
-      osc.type = "triangle";
-      osc.frequency.value = fq;
-      osc.detune.value = (Math.random() * 2 - 1) * 6;
-      const g = actx.createGain();
-      g.gain.setValueAtTime(0.0, t);
-      g.gain.linearRampToValueAtTime(0.034, t + 3.5);
-      g.gain.setTargetAtTime(0.0, t + 6.5, 1.6);
-      osc.connect(g); g.connect(MUSIC.padFilter);
-      osc.start(t); osc.stop(t + 14);
-    });
-  }
-
-  function playPluck(freq, peak = 0.05, dur = 3) {
-    if (!actx || !MUSIC.bus || !MUSIC.delay) return;
-    const t = actx.currentTime;
-    const osc = actx.createOscillator();
-    osc.type = "sine";
-    osc.frequency.value = freq;
-    const g = actx.createGain();
-    g.gain.setValueAtTime(0.0, t);
-    g.gain.linearRampToValueAtTime(peak, t + 0.03);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    osc.connect(g); g.connect(MUSIC.bus); g.connect(MUSIC.delay);
-    osc.start(t); osc.stop(t + dur + 0.1);
-  }
-
-  function schedulePluck() {
-    window.clearTimeout(MUSIC.pluckTimer);
-    MUSIC.pluckTimer = window.setTimeout(() => {
-      if (MUSIC.on) {
-        playPluck(PLUCK_SCALE[Math.floor(Math.random() * PLUCK_SCALE.length)]);
-        schedulePluck();
-      }
-    }, 2500 + Math.random() * 4500);
-  }
-
-  function musicTarget() {
-    return MUSIC.muted ? 0.0 : MUSIC.vol * 0.22 * MUSIC.duck; // deliberately quiet bed
-  }
-
-  function setMusicUI() {
-    if (musicPlay) {
-      musicPlay.textContent = MUSIC.on ? "\u275A\u275A PAUSE" : "\u25B6 PLAY";
-      musicPlay.setAttribute("aria-pressed", String(MUSIC.on));
-    }
-    if (musicMute) musicMute.setAttribute("aria-pressed", String(MUSIC.muted));
-    if (musicLed) musicLed.hidden = !MUSIC.on;
-    if (musicDeckLed) musicDeckLed.hidden = !MUSIC.on;
-  }
-
-  function startMusic() {
-    if (!ensureAudio()) { logLine("audio unavailable in this browser"); return; }
-    actx?.resume?.();
-    buildMusicGraph();
-    if (!MUSIC.bus) return;
-    MUSIC.on = true;
-    const t = actx.currentTime;
-    MUSIC.bus.gain.cancelScheduledValues(t);
-    MUSIC.bus.gain.setTargetAtTime(musicTarget(), t, 1.0); // slow fade-in, never abrupt
-    padChord(PROG[MUSIC.chord].notes);
-    if (musicTrackLabel) musicTrackLabel.textContent = PROG[MUSIC.chord].name;
-    window.clearInterval(MUSIC.padTimer);
-    MUSIC.padTimer = window.setInterval(() => {
-      if (!MUSIC.on) return;
-      MUSIC.chord = (MUSIC.chord + 1) % PROG.length;
-      padChord(PROG[MUSIC.chord].notes);
-      if (musicTrackLabel) musicTrackLabel.textContent = PROG[MUSIC.chord].name;
-    }, 9000);
-    schedulePluck();
-    setMusicUI();
-  }
-
-  function stopMusic() {
-    MUSIC.on = false;
-    window.clearInterval(MUSIC.padTimer);
-    window.clearTimeout(MUSIC.pluckTimer);
-    if (actx && MUSIC.bus) MUSIC.bus.gain.setTargetAtTime(0.0, actx.currentTime, 0.6);
-    setMusicUI();
-  }
-
-  function ambientShimmer() {
-    if (!MUSIC.on || MUSIC.muted || !actx || !MUSIC.padFilter) return;
-    const now = Date.now();
-    if (now - MUSIC.lastShimmer < 4000) return; // one breath per descent, not per pixel
-    MUSIC.lastShimmer = now;
-    const top = PROG[MUSIC.chord].notes[PROG[MUSIC.chord].notes.length - 1] * 2;
-    playPluck(top, 0.032, 4.5);
-    const t = actx.currentTime;
-    MUSIC.padFilter.frequency.cancelScheduledValues(t);
-    MUSIC.padFilter.frequency.setTargetAtTime(1150, t, 0.8);
-    MUSIC.padFilter.frequency.setTargetAtTime(700, t + 2.2, 1.4);
-  }
-
-  function onChapterChange() { ambientShimmer(); }
+  /* generative score removed — the deck now carries transmissions only. */
 
   musicBtn?.addEventListener("click", () => {
     if (!musicDeck) return;
@@ -651,16 +468,7 @@
     musicDeck.hidden = !open;
     musicBtn.setAttribute("aria-expanded", String(open));
   });
-  musicPlay?.addEventListener("click", () => { if (MUSIC.on) stopMusic(); else startMusic(); });
-  musicMute?.addEventListener("click", () => {
-    MUSIC.muted = !MUSIC.muted;
-    if (actx && MUSIC.bus) MUSIC.bus.gain.setTargetAtTime(musicTarget(), actx.currentTime, 0.4);
-    setMusicUI();
-  });
-  musicVol?.addEventListener("input", () => {
-    MUSIC.vol = parseInt(musicVol.value, 10) / 100;
-    if (MUSIC.on && actx && MUSIC.bus) MUSIC.bus.gain.setTargetAtTime(musicTarget(), actx.currentTime, 0.2);
-  });
+  /* deck transport lives on the transmission block below. */
 
   /* ---------- 12c. TRANSMISSION: official YouTube signal ----------
      Beach House — "Space Song" (Sub Pop, 2015), video RBtlPT23PTM.
@@ -693,7 +501,6 @@
     trackBtns.forEach((b) => b.classList.toggle("is-active", parseInt(b.dataset.track, 10) === songIdx));
   }
 
-  const soundPrompt = $("#soundPrompt");
   const nowPlaying = $("#nowPlaying");
   let songAutoDone = false, songStarted = false;
 
@@ -701,7 +508,6 @@
     const playing = state === 1 || state === 3;
     if (playing) {
       songStarted = true;
-      if (soundPrompt) soundPrompt.hidden = true;
       if (nowPlaying) nowPlaying.hidden = false;
     } else if (state === 2 || state === 0) {
       if (nowPlaying) nowPlaying.hidden = true;
@@ -711,9 +517,6 @@
       songPlay.setAttribute("aria-pressed", String(playing));
     }
     if (songLed) songLed.hidden = !playing;
-    // duck the generative bed under the song, restore after
-    MUSIC.duck = playing ? 0.35 : 1;
-    if (MUSIC.on && actx && MUSIC.bus) MUSIC.bus.gain.setTargetAtTime(musicTarget(), actx.currentTime, 0.8);
   }
 
   function createYtPlayer(videoId) {
@@ -792,7 +595,14 @@
   });
 
   /* Delayed autoplay: try ~5s after entry; browsers that block it
-     (most, without a prior gesture) get a one-tap sound prompt. */
+     (most, without a prior gesture) get the deck opened for one tap. */
+  let deckAutoOpened = false;
+  function openDeckAuto() {
+    if (deckAutoOpened || !musicDeck) return;
+    deckAutoOpened = true;
+    musicDeck.hidden = false;
+    musicBtn?.setAttribute("aria-expanded", "true");
+  }
   function attemptSongAuto(attempts = 0) {
     if (songAutoDone || songStarted) return;
     if (ytPlayer && ytReady) {
@@ -801,24 +611,17 @@
       window.setTimeout(() => {
         let st = -99;
         try { st = ytPlayer.getPlayerState(); } catch { /* ignore */ }
-        if (st !== 1 && !songStarted && soundPrompt) soundPrompt.hidden = false;
+        if (st !== 1 && !songStarted) openDeckAuto();
       }, 1800);
       return;
     }
     if (attempts < 4) window.setTimeout(() => attemptSongAuto(attempts + 1), 2500);
-    else if (soundPrompt) soundPrompt.hidden = false;
+    else openDeckAuto();
   }
   function scheduleSongAuto() {
     const wait = Math.max(0, 5000 - (Date.now() - t0));
     window.setTimeout(attemptSongAuto, wait);
   }
-  soundPrompt?.addEventListener("click", () => {
-    if (soundPrompt) soundPrompt.hidden = true;
-    try {
-      if (ytPlayer && ytReady) ytPlayer.playVideo();
-      else playTrack(songIdx);
-    } catch { /* ignore */ }
-  });
   nowPlaying?.addEventListener("click", () => {
     if (musicDeck) { musicDeck.hidden = false; musicBtn?.setAttribute("aria-expanded", "true"); }
   });
@@ -898,7 +701,6 @@
   const deskPost = $("#deskPost");
   const deskToast = $("#deskToast");
   const netIco = $("#netIco");
-  const volIco = $("#volIco");
   let zTop = 20;
   const openWins = {};
   const canDragWin = () => finePointer && !reducedMotion && window.innerWidth > 700;
@@ -1531,65 +1333,23 @@
     }, { status: "1.3 MP · most of these were never meant to be seen again", wide: true });
   }
 
-  /* --- media player: live visualizer of the room itself --- */
-  let vizAnalyser = null;
+  /* --- media player: the two found songs --- */
   function openPlayer() {
-    openWindow("player", "media player", (body, rec) => {
-      const cv = el("canvas", "viz", "");
-      cv.width = 120; cv.height = 44;
-      const hint = el("p", "viz-hint", "visualizing the room. start the ambience to wake it up.");
+    openWindow("player", "media player", (body) => {
+      const now = el("p", "notepad", "♪  NOW IN THE RECEIVER:\n\n   SPACE SONG — beach house\n   MY LOVE MINE ALL MINE — mitski\n\n   picked at 2 AM. never skipped.");
+      now.style.textAlign = "left";
       const row = el("div", "player-row", "");
-      const amb = el("button", "snake-start", MUSIC.on ? "STOP AMBIENCE" : "PLAY AMBIENCE"); amb.type = "button";
       const s0 = el("button", "snake-start", "▶ SPACE SONG"); s0.type = "button";
       const s1 = el("button", "snake-start", "▶ MY LOVE…"); s1.type = "button";
-      row.append(amb);
-      body.append(cv, hint, row);
-      const srow = el("div", "player-row", "");
-      srow.append(s0, s1);
-      body.append(srow);
+      row.append(s0, s1);
+      body.append(now, row);
       const foundSong = (i) => {
         if (musicDeck) { musicDeck.hidden = false; musicBtn?.setAttribute("aria-expanded", "true"); }
         playTrack(i);
       };
       s0.addEventListener("click", () => foundSong(0));
       s1.addEventListener("click", () => foundSong(1));
-      amb.addEventListener("click", () => {
-        if (MUSIC.on) stopMusic(); else startMusic();
-        amb.textContent = MUSIC.on ? "STOP AMBIENCE" : "PLAY AMBIENCE";
-      });
-      const ctx3 = cv.getContext("2d");
-      const data = new Uint8Array(32);
-      let dead = false;
-      const draw = () => {
-        if (dead) return;
-        if (actx && !vizAnalyser) {
-          try {
-            vizAnalyser = actx.createAnalyser();
-            vizAnalyser.fftSize = 64;
-            vizAnalyser.smoothingTimeConstant = 0.82;
-            if (MUSIC.bus) MUSIC.bus.connect(vizAnalyser);
-            if (master) master.connect(vizAnalyser);
-          } catch { /* no viz */ }
-        }
-        ctx3.fillStyle = "#0a1410"; ctx3.fillRect(0, 0, 120, 44);
-        if (vizAnalyser) {
-          vizAnalyser.getByteFrequencyData(data);
-          ctx3.fillStyle = "#8cff9e";
-          for (let i = 0; i < 24; i++) {
-            const v = data[Math.floor((i / 24) * data.length)] / 255;
-            const h = Math.max(2, v * 40);
-            ctx3.fillRect(2 + i * 5, 42 - h, 3, h);
-          }
-          hint.textContent = "live room analysis · green means go";
-        } else {
-          ctx3.fillStyle = "#1d3a2a";
-          for (let i = 0; i < 24; i++) ctx3.fillRect(2 + i * 5, 40, 3, 2);
-        }
-        vizRAF = requestAnimationFrame(draw);
-      };
-      let vizRAF = requestAnimationFrame(draw);
-      rec.cleanup = () => { dead = true; cancelAnimationFrame(vizRAF); };
-    }, { status: "side A · endless · green means go" });
+    }, { status: "two songs. both found after midnight." });
   }
 
   /* --- minesweeper: real game, real loss --- */
@@ -1787,15 +1547,9 @@
         row.append(b);
       });
       wp.append(row);
-      const tone = el("button", "snake-start", audioOn ? "ROOM TONE: ON" : "ROOM TONE: OFF");
-      tone.type = "button"; tone.style.marginTop = "10px";
-      tone.addEventListener("click", () => {
-        setRoomTone(!audioOn);
-        tone.textContent = audioOn ? "ROOM TONE: ON" : "ROOM TONE: OFF";
-      });
       const mins = Math.floor((Date.now() - t0) / 60000);
       const about = el("p", "ctl-note", `CA-2001 · FAMILY EDITION · this session: ${mins} min · uptime: 23 years · everything still works.`);
-      body.append(wp, tone, about);
+      body.append(wp, about);
     }, { status: "if it ain't broke, personalize it" });
   }
 
@@ -2037,10 +1791,6 @@
     BROWSER.hist = [];
     BROWSER.page = "forum";
     openBrowser();
-  });
-  volIco?.addEventListener("click", () => {
-    soundToggle?.click();
-    volIco.setAttribute("aria-pressed", soundToggle?.getAttribute("aria-pressed") || "false");
   });
 
   /* --- mixtape bridge --- */

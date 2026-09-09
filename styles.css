@@ -122,10 +122,7 @@ section[id], div[id] { scroll-margin-top: 12px; }
 .sysbar .key-toggle, .sysbar #indexBtn { margin-left: 0; }
 .sysbar .key-toggle { margin-left: auto; }
 .indexmap { position: fixed; inset: 0; z-index: 260; display: flex; align-items: center; justify-content: center; padding: 22px; }
-/* tap-for-sound fallback (when the browser blocks autoplay) */
-.sound-prompt { position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%); z-index: 126; font-family: var(--mono); font-size: 12px; letter-spacing: 0.2em; color: #06110a; background: linear-gradient(180deg, #ffd28a, var(--amber) 60%, #d98a2b); border: 1px solid #05070a; border-radius: 24px; padding: 13px 26px; cursor: pointer; box-shadow: 0 0 26px rgba(255,180,84,0.5), 0 4px 0 #05070a; animation: prompt-pulse 1.6s ease-in-out infinite; white-space: nowrap; }
-.sound-prompt[hidden] { display: none; }
-@keyframes prompt-pulse { 50% { transform: translateX(-50%) scale(1.05); } }
+/* retired prompt styles removed */
 .now-playing { position: fixed; left: 50%; bottom: 70px; transform: translateX(-50%); z-index: 126; display: inline-flex; align-items: center; gap: 9px; font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; color: var(--crt); background: rgba(4,8,5,0.88); border: 1px solid rgba(140,255,158,0.5); border-radius: 24px; padding: 11px 22px; cursor: pointer; box-shadow: 0 0 20px rgba(140,255,158,0.25); white-space: nowrap; }
 .now-playing[hidden] { display: none; }
 /* ambient music deck */
@@ -551,9 +548,7 @@ section[id], div[id] { scroll-margin-top: 12px; }
 .minecell.flag::after { content: "⚑"; }
 .mines-foot { display: flex; gap: 8px; margin-top: 10px; }
 .mines-foot .snake-start { flex: 1; }
-/* media player + visualizer */
-.viz { width: 100%; height: 110px; background: #0a1410; border: 2px solid #274b66; border-radius: 4px; }
-.viz-hint { font-family: var(--mono); font-size: 11px; color: #5b6360; margin: 8px 0 0; }
+/* media player */
 .player-row { display: flex; gap: 8px; margin-top: 10px; }
 .player-row .snake-start { flex: 1; }
 /* digicam */

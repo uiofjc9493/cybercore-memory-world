@@ -38,33 +38,18 @@
   <div class="cursor-ring" id="cursorRing" aria-hidden="true"></div>
 
   <!-- WORLD NAV: system strip -->
-  <button class="sound-prompt" id="soundPrompt" type="button" hidden data-hover>♪ TAP FOR SOUND</button>
   <button class="now-playing" id="nowPlaying" type="button" hidden data-hover><span class="led led-green" aria-hidden="true"></span> ♪ NOW PLAYING — TAP FOR DECK</button>
   <div class="sysbar">
     <span class="lcd lcd-chapter" id="chapterLcd" title="Current depth">01 · SIGNAL</span>
     <span class="lcd lcd-clock" id="clock" title="Local time">00:00:00</span>
-    <button class="key key-toggle" id="soundToggle" type="button" aria-pressed="false" data-hover title="Toggle room tone (generated, no audio files)">
-      <span class="sound-icon" aria-hidden="true"><span></span><span></span><span></span></span>
-      <span class="sound-label" id="soundLabel">SOUND OFF</span>
-    </button>
     <button class="key" id="indexBtn" type="button" data-hover aria-haspopup="dialog">INDEX</button>
-    <button class="key" id="musicBtn" type="button" data-hover aria-expanded="false" aria-controls="musicDeck" title="Open the ambient music deck (original generative score)">
-      <span class="led led-green" id="musicLed" aria-hidden="true" hidden></span> MUSIC
+    <button class="key" id="musicBtn" type="button" data-hover aria-expanded="false" aria-controls="musicDeck" title="Open the transmission deck">
+      MUSIC
     </button>
   </div>
 
-  <!-- AMBIENT MUSIC DECK: original generative score, no audio files -->
-  <div class="music-deck rivets" id="musicDeck" role="group" aria-label="Ambient music deck" hidden>
-    <p class="deck-label">AMBIENCE · GENERATED LIVE <span class="led led-green" id="musicDeckLed" aria-hidden="true" hidden></span></p>
-    <p class="music-title" id="musicTrackLabel">SIDE A — “TUBE WARMTH”</p>
-    <div class="music-row">
-      <button class="key" id="musicPlay" type="button" aria-pressed="false" data-hover>▶ PLAY</button>
-      <button class="key" id="musicMute" type="button" aria-pressed="false" data-hover>MUTE</button>
-    </div>
-    <label class="tune" for="musicVol">VOLUME
-      <input type="range" id="musicVol" min="0" max="100" value="55" data-hover />
-    </label>
-    <p class="music-note">An original endless score — soft pads, distant tones, room air. Never leaves your browser.</p>
+  <!-- TRANSMISSION DECK: found songs, official YouTube embeds -->
+  <div class="music-deck rivets" id="musicDeck" role="group" aria-label="Transmission deck" hidden>
     <div class="transmission">
       <p class="deck-label">TRANSMISSION · FOUND SIGNAL <span class="led led-amber" id="songLed" aria-hidden="true" hidden></span></p>
       <div class="yt-screen" id="ytScreen">
@@ -83,7 +68,7 @@
       <label class="tune" for="songVol">VOLUME
         <input type="range" id="songVol" min="0" max="100" value="55" data-hover />
       </label>
-      <p class="music-note" id="songNote">Plays only when you press play. <a id="songWatch" href="https://www.youtube.com/watch?v=RBtlPT23PTM" target="_blank" rel="noopener" data-hover>Watch on YouTube ↗</a></p>
+      <p class="music-note" id="songNote">Official upload · lives in this receiver. <a id="songWatch" href="https://www.youtube.com/watch?v=RBtlPT23PTM" target="_blank" rel="noopener" data-hover>Watch on YouTube ↗</a></p>
     </div>
   </div>
 
@@ -434,7 +419,6 @@
               <button class="startbtn" id="startBtn" type="button" aria-haspopup="menu" aria-expanded="false" data-hover>▞ START</button>
               <div class="desk-tray" id="deskTray" aria-label="Open windows"></div>
               <button class="trayico" id="netIco" type="button" title="Network: 56k connected — open the forum" aria-label="Network status: connected. Open the forum." data-hover>▂▄▆</button>
-              <button class="trayico" id="volIco" type="button" title="Room tone on/off" aria-label="Toggle room tone" aria-pressed="false" data-hover>♪</button>
               <span class="lcd lcd-desk" id="deskClock" title="Computer clock">--:--</span>
             </div>
             <div class="startmenu" id="startMenu" role="menu" hidden></div>
