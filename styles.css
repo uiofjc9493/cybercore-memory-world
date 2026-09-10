@@ -450,6 +450,8 @@ section[id], div[id] { scroll-margin-top: 12px; }
 .homepage h4 { font-size: 22px; margin: 16px 0 4px; color: #274b66; }
 .homepage p { font-size: 12.5px; color: #394047; margin: 0 0 10px; }
 .homepage .counter { display: inline-block; font-family: var(--term); font-size: 20px; background: #101315; color: var(--crt); padding: 2px 12px; letter-spacing: 3px; border-radius: 4px; }
+.guestbook-sub { margin-top: 12px; }
+.brick-clock { font-size: 22px; }
 /* chat */
 .chatlog { display: flex; flex-direction: column; gap: 7px; min-height: 180px; }
 .chatline { font-family: var(--mono); font-size: 12px; line-height: 1.6; }

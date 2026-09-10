@@ -1103,7 +1103,7 @@
       const d = el("div", "homepage", `<div class="banner">✿ SARA'S CORNER OF THE INTERNET ✿</div>
         <h4>welcome to my page!!</h4><p>song of the week plays below (turn your speakers up, sorry mom)</p>
         <span class="counter">001337</span>
-        <p style="margin-top:12px">sign the guestbook. be nice.</p>`);
+        <p class="guestbook-sub">sign the guestbook. be nice.</p>`);
       const sign = el("button", "snake-start", "SIGN GUESTBOOK");
       sign.type = "button";
       const msg = el("p", "", ""); msg.style.cssText = "font-family:var(--mono);font-size:11px;color:#2f7a4d;";
@@ -1322,7 +1322,7 @@
         scr.innerHTML = "";
         const d = new Date();
         const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-        scr.append(el("div", "", `<b style="font-size:22px">${pad(d.getHours())}:${pad(d.getMinutes())}</b><br/>${days[d.getDay()]} · battery ▂▄▆█`), backBtn());
+        scr.append(el("div", "", `<b class="brick-clock">${pad(d.getHours())}:${pad(d.getMinutes())}</b><br/>${days[d.getDay()]} · battery ▂▄▆█`), backBtn());
       };
       const showPhotos = () => {
         scr.innerHTML = "";

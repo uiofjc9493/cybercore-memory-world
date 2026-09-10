@@ -18,6 +18,11 @@ const TYPES = {
 
 http
   .createServer((req, res) => {
+    if (req.method !== "GET" && req.method !== "HEAD") {
+      res.writeHead(405, { "Content-Type": "text/plain", Allow: "GET, HEAD" });
+      res.end("method not allowed");
+      return;
+    }
     let urlPath;
     try {
       urlPath = decodeURIComponent(req.url.split("?")[0]);
