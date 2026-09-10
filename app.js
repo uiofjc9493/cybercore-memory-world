@@ -491,7 +491,7 @@
   musicBtn?.addEventListener("click", () => {
     if (!musicDeck) return;
     const open = musicDeck.hidden;
-    if (open) loadYtApi(); // fetch the player only when the human asks for music
+    if (open) { playerWanted = true; loadYtApi(); } // preload while visible, never autoplay
     musicDeck.hidden = !open;
     musicBtn.setAttribute("aria-expanded", String(open));
   });
@@ -522,6 +522,7 @@
   const songWatch = $("#songWatch");
   const trackBtns = $$(".track");
   let ytPlayer = null, ytReady = false, ytApiLoading = false, songIdx = 0;
+  let playerWanted = false, pendingPlay = false; // never build or start audio without human demand
 
   function setTrackUI() {
     const s = SONGS[songIdx];
@@ -559,7 +560,9 @@
         onReady: (e) => {
           ytReady = true;
           e.target.setVolume(songVol ? parseInt(songVol.value, 10) : 55);
-          e.target.playVideo(); // runs inside the click's transient activation
+          // Play ONLY as the continuation of a human tap. Auto-playing here
+          // (e.g. in a hidden player at load) wedges mobile browsers.
+          if (pendingPlay) { pendingPlay = false; try { e.target.playVideo(); } catch { /* user can press play */ } }
         },
         onStateChange: (e) => setSongUI(e.data),
         onError: () => {
@@ -569,7 +572,7 @@
       },
     });
   }
-  window.onYouTubeIframeAPIReady = () => { createYtPlayer(SONGS[songIdx].id); };
+  window.onYouTubeIframeAPIReady = () => { if (playerWanted) createYtPlayer(SONGS[songIdx].id); };
 
   function loadYtApi(onFail) {
     if (window.YT && window.YT.Player) return true;
@@ -586,10 +589,12 @@
   function playTrack(i) {
     songIdx = (i + SONGS.length) % SONGS.length;
     setTrackUI();
+    playerWanted = true;
     if (ytPlayer && ytReady) {
       try { ytPlayer.loadVideoById(SONGS[songIdx].id); } catch { /* user can press play */ }
       return;
     }
+    pendingPlay = true; // continue into playback as soon as the player exists
     if (songNote) songNote.textContent = "TUNING TRANSMISSION…";
     if (loadYtApi(() => {
       if (songNote) songNote.textContent = "NO SIGNAL (OFFLINE?) — THE ARCHIVE HUMS ON.";
@@ -602,6 +607,7 @@
   }));
 
   songPlay?.addEventListener("click", () => {
+    playerWanted = true;
     if (ytPlayer && ytReady) {
       try {
         const s = ytPlayer.getPlayerState();
@@ -610,6 +616,7 @@
       } catch { /* player not ready yet; user can press again */ }
       return;
     }
+    pendingPlay = true;
     playTrack(songIdx);
   });
   songMute?.addEventListener("click", () => {
@@ -649,6 +656,7 @@
     else openDeckAuto();
   }
   function scheduleSongAuto() {
+    playerWanted = true;
     loadYtApi(); // fetch the player now; playback still waits for ~5s
     const wait = Math.max(0, 5000 - (Date.now() - t0));
     window.setTimeout(attemptSongAuto, wait);
