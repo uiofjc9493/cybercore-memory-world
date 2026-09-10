@@ -133,12 +133,14 @@
     indexReturnFocus = document.activeElement;
     indexmap.hidden = false;
     document.body.style.overflow = "hidden";
+    indexBtn?.setAttribute("aria-expanded", "true");
     indexClose?.focus();
   }
   function closeIndex() {
     if (!indexmap || indexmap.hidden) return;
     indexmap.hidden = true;
     document.body.style.overflow = "";
+    indexBtn?.setAttribute("aria-expanded", "false");
     if (indexReturnFocus && indexReturnFocus.focus) indexReturnFocus.focus();
   }
   indexBtn?.addEventListener("click", openIndex);
@@ -147,6 +149,14 @@
   $$(".index-panel a").forEach((a) => a.addEventListener("click", closeIndex));
   document.addEventListener("keydown", (e) => {
     if (indexmap && !indexmap.hidden && e.key === "Escape") closeIndex();
+    if (indexmap && !indexmap.hidden && e.key === "Tab") {
+      const focusables = $$("button, a[href]", indexmap).filter((elm) => !elm.disabled);
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
   });
 
   /* ---------- 5. CLOCKS ---------- */
@@ -275,11 +285,19 @@
   if (finePointer && !reducedMotion) {
     const preview = $("#memoryPreview");
     const pimg = preview ? $("img", preview) : null;
-    let px = 0, py = 0, tx = 0, ty = 0;
+    let px = 0, py = 0, tx = 0, ty = 0, vaultNear = true;
+    const vaultSec = $("#vault");
+    if ("IntersectionObserver" in window && vaultSec) {
+      new IntersectionObserver((entries) => {
+        vaultNear = entries.some((e) => e.isIntersecting);
+      }, { rootMargin: "30% 0px 30% 0px" }).observe(vaultSec);
+    }
     document.addEventListener("mousemove", (e) => { tx = e.clientX + 26; ty = e.clientY - 85; }, { passive: true });
     (function follow() {
-      px += (tx - px) * 0.12; py += (ty - py) * 0.12;
-      if (preview) { preview.style.left = `${px}px`; preview.style.top = `${py}px`; }
+      if (vaultNear || (preview && preview.classList.contains("is-on"))) {
+        px += (tx - px) * 0.12; py += (ty - py) * 0.12;
+        if (preview) { preview.style.left = `${px}px`; preview.style.top = `${py}px`; }
+      }
       requestAnimationFrame(follow);
     })();
     $$(".tray-row").forEach((row) => {
@@ -473,6 +491,7 @@
   musicBtn?.addEventListener("click", () => {
     if (!musicDeck) return;
     const open = musicDeck.hidden;
+    if (open) loadYtApi(); // fetch the player only when the human asks for music
     musicDeck.hidden = !open;
     musicBtn.setAttribute("aria-expanded", String(open));
   });
@@ -630,11 +649,10 @@
     else openDeckAuto();
   }
   function scheduleSongAuto() {
+    loadYtApi(); // fetch the player now; playback still waits for ~5s
     const wait = Math.max(0, 5000 - (Date.now() - t0));
     window.setTimeout(attemptSongAuto, wait);
   }
-  loadYtApi(); // warm the player early so the delayed start is instant
-
   /* ---------- 13. FINDS LIGHTBOX ---------- */
   const gItems = $$(".drift-item");
   const lb = $("#lightbox");
@@ -884,6 +902,7 @@
     bar.addEventListener("pointerdown", (e) => {
       if (!canDragWin() || e.target.closest("button")) return;
       e.preventDefault();
+      if (win.classList.contains("maximized")) toggleMax(); // drag-to-restore, like the real thing
       const scr = pcscreen.getBoundingClientRect();
       const wr = win.getBoundingClientRect();
       const dx = e.clientX - wr.left, dy = e.clientY - wr.top;
@@ -1161,6 +1180,7 @@
         ctx2.fillRect(food[0], food[1], 1, 1);
       };
       const key = (e) => {
+        if (e.target.closest("input, textarea, [contenteditable]")) return;
         const k = e.key;
         if (k === "ArrowUp" || k === "w") dir = [0, -1];
         else if (k === "ArrowDown" || k === "s") dir = [0, 1];
@@ -1646,6 +1666,7 @@
   document.addEventListener("keydown", (e) => {
     const tag = (e.target && e.target.tagName) || "";
     if (tag === "INPUT" || tag === "TEXTAREA" || e.target.isContentEditable) return;
+    if ((lb && !lb.hidden) || (indexmap && !indexmap.hidden)) { konamiPos = 0; return; }
     konamiPos = e.key === KONAMI[konamiPos] ? konamiPos + 1 : (e.key === KONAMI[0] ? 1 : 0);
     if (konamiPos === KONAMI.length) {
       konamiPos = 0;
