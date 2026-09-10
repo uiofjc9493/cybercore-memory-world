@@ -56,8 +56,8 @@ affiliated with nothing:
 - folders with real contents: photos, music, downloads, school, videos, notebook
 - a 2003-style browser: search portal → results → midnight forum → Sara's page
 - a chat that types itself, a digicam with a dated roll, a brick phone
-  (contacts, messages, **working calculator**, clock), Paint (**set as wallpaper**),
-  Control Panel (wallpapers, about), media player, POST card, live clock
+  (contacts, messages, **working calculator**), Paint (**set as wallpaper**),
+  Control Panel (wallpapers, about), media player, POST card
 - **three real playable games**: Snake, Minesweeper, Memory Match
 - system blips synthesized live — never forced, never before you touch anything
 

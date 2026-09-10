@@ -159,18 +159,9 @@
     }
   });
 
-  /* ---------- 5. CLOCKS ---------- */
-  const clockEl = $("#clock");
-  const quietClock = $("#quietClock");
+  /* ---------- 5. TIME (session-relative only — never wall-clock) ---------- */
   const t0 = Date.now();
   const pad = (n) => String(n).padStart(2, "0");
-  function tickClocks() {
-    const d = new Date();
-    if (clockEl) clockEl.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-    if (quietClock) quietClock.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  }
-  tickClocks();
-  setInterval(tickClocks, 1000);
 
   /* ---------- 6. REVEAL ---------- */
   const revealEls = $$(".reveal");
@@ -731,7 +722,6 @@
   const deskTray = $("#deskTray");
   const startBtn = $("#startBtn");
   const startMenu = $("#startMenu");
-  const deskClock = $("#deskClock");
   const deskPost = $("#deskPost");
   const deskToast = $("#deskToast");
   const netIco = $("#netIco");
@@ -1262,7 +1252,7 @@
       const showMenu = () => {
         scr.innerHTML = "";
         const menu = el("div", "b-menu", "");
-        [["› Contacts", showContacts], ["› Messages", showMessages], ["› Calculator", showCalc], ["› Clock", showClock], ["› Photos", showPhotos]].forEach(([label, fn]) => {
+        [["› Contacts", showContacts], ["› Messages", showMessages], ["› Calculator", showCalc], ["› Photos", showPhotos]].forEach(([label, fn]) => {
           const b = el("button", "", label);
           b.type = "button";
           b.addEventListener("click", () => { sysBlip(880, 0.04); fn(); });
@@ -1317,12 +1307,6 @@
           grid.append(b);
         });
         scr.append(disp, grid, backBtn());
-      };
-      const showClock = () => {
-        scr.innerHTML = "";
-        const d = new Date();
-        const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-        scr.append(el("div", "", `<b class="brick-clock">${pad(d.getHours())}:${pad(d.getMinutes())}</b><br/>${days[d.getDay()]} · battery ▂▄▆█`), backBtn());
       };
       const showPhotos = () => {
         scr.innerHTML = "";
@@ -1769,14 +1753,6 @@
     if (startMenu && !startMenu.hidden && !e.target.closest(".startmenu") && !e.target.closest(".startbtn")) toggleStart(false);
   });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && startMenu && !startMenu.hidden) toggleStart(false); });
-  if (deskClock) {
-    const tickDesk = () => {
-      const d = new Date();
-      deskClock.textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    };
-    tickDesk();
-    window.setInterval(tickDesk, 5000);
-  }
   // first-visit startup chord — only if audio is already unlocked by a gesture
   let deskGreeted = false;
   if ("IntersectionObserver" in window && pcscreen) {

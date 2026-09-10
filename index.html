@@ -39,8 +39,6 @@
 
   <!-- WORLD NAV: system strip -->
   <div class="sysbar">
-    <span class="lcd lcd-chapter" id="chapterLcd" title="Current depth">01 · SIGNAL</span>
-    <span class="lcd lcd-clock" id="clock" title="Local time">00:00:00</span>
     <button class="key" id="indexBtn" type="button" data-hover aria-haspopup="dialog">INDEX</button>
     <button class="key" id="musicBtn" type="button" data-hover aria-expanded="false" aria-controls="musicDeck" title="Open the transmission deck">
       MUSIC
@@ -169,7 +167,7 @@
       <p class="engraved silence-tag reveal">04 — SILENCE <span class="led led-amber" aria-hidden="true"></span></p>
       <h2 class="silence-title reveal" id="silence-title">Nothing happens here.</h2>
       <p class="silence-note reveal">Stay a moment.<span class="caret" aria-hidden="true">▌</span></p>
-      <p class="silence-readout reveal" aria-hidden="true">ROOM TEMP 21.4°C · HUM 50Hz · <span id="quietClock">--:--</span></p>
+      <p class="silence-readout reveal" aria-hidden="true">ROOM TEMP 21.4°C · HUM 50Hz</p>
     </section>
 
     <!-- 05 · ROOMS -->
@@ -419,7 +417,6 @@
               <button class="startbtn" id="startBtn" type="button" aria-haspopup="menu" aria-expanded="false" data-hover>▞ START</button>
               <div class="desk-tray" id="deskTray" aria-label="Open windows"></div>
               <button class="trayico" id="netIco" type="button" title="Network: 56k connected — open the forum" aria-label="Network status: connected. Open the forum." data-hover>▂▄▆</button>
-              <span class="lcd lcd-desk" id="deskClock" title="Computer clock">--:--</span>
             </div>
             <div class="startmenu" id="startMenu" role="menu" hidden></div>
           </div>
