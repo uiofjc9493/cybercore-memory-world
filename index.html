@@ -6,17 +6,29 @@
   <title>CYBERCORE — enter the forgotten world</title>
   <meta name="description" content="Descend into Cybercore: signal, object, machine, rooms, memory, network, archive. A forgotten technological world." />
   <meta name="theme-color" content="#07090b" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="author" content="CYBERCORE" />
+  <link rel="canonical" href="https://cybercore-ten.vercel.app/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="CYBERCORE — enter the forgotten world" />
+  <meta property="og:description" content="Descend into Cybercore: signal, object, machine, rooms, memory, network, archive. A forgotten technological world." />
+  <meta property="og:url" content="https://cybercore-ten.vercel.app/" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="CYBERCORE — enter the forgotten world" />
+  <meta name="twitter:description" content="Descend into Cybercore: signal, object, machine, rooms, memory, network, archive." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;1,400&family=VT323&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=6" />
+  <link rel="stylesheet" href="styles.css?v=7" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%231a1e21'/%3E%3Crect x='6' y='6' width='20' height='14' rx='2' fill='none' stroke='%23c9ced2' stroke-width='2'/%3E%3Crect x='10' y='24' width='12' height='2' fill='%238cff9e'/%3E%3Ccircle cx='16' cy='13' r='3' fill='%237dd8ff'/%3E%3C/svg%3E" />
 </head>
 <body data-state="booting">
   <a class="skip" href="#main">Skip into the world</a>
+  <p id="chapterLcd" class="visually-live" aria-live="polite" aria-hidden="true" hidden></p>
 
   <!-- AIRLOCK -->
-  <div class="boot" id="boot" aria-hidden="false" role="presentation">
+  <div class="boot" id="boot" role="dialog" aria-modal="true" aria-label="Entering Cybercore" aria-hidden="false">
     <div class="boot-inner">
       <p class="boot-brand">CYBERCORE <span>v4.0 // DESCENT</span></p>
       <div class="boot-log" id="bootLog" aria-hidden="true"></div>
@@ -39,7 +51,7 @@
 
   <!-- WORLD NAV: system strip -->
   <div class="sysbar">
-    <button class="key" id="indexBtn" type="button" data-hover aria-haspopup="dialog">INDEX</button>
+    <button class="key" id="indexBtn" type="button" data-hover aria-haspopup="dialog" aria-expanded="false" aria-controls="indexmap">INDEX</button>
     <button class="key" id="musicBtn" type="button" data-hover aria-expanded="false" aria-controls="musicDeck" title="Open the transmission deck">
       MUSIC
     </button>
@@ -51,7 +63,7 @@
     <div class="transmission">
       <p class="deck-label">TRANSMISSION · FOUND SIGNAL <span class="led led-amber" id="songLed" aria-hidden="true" hidden></span></p>
       <div class="yt-screen" id="ytScreen">
-        <div id="ytPlayer" title="Official YouTube player"></div>
+        <div id="ytPlayer" role="region" aria-label="Official YouTube player"></div>
       </div>
       <p class="music-title music-title-song" id="songTitle">BEACH HOUSE — “SPACE SONG”</p>
       <p class="music-sub" id="songSub">SUB POP · 2015 · OFFICIAL UPLOAD · 5:20</p>
@@ -83,8 +95,8 @@
       <a href="#desk" data-hover><i>06</i><b>Desk</b><span>sit down</span></a>
       <a href="#moments" data-hover><i>✳</i><b>Midnight</b><span>the life</span></a>
       <a href="#day" data-hover><i>☀</i><b>Sunday</b><span>the day</span></a>
-      <a href="#ordinary" data-hover><i>◍</i><b>Ordinary</b><span>days</span></a>
       <a href="#outside" data-hover><i>◐</i><b>Curfew</b><span>outside</span></a>
+      <a href="#ordinary" data-hover><i>◍</i><b>Ordinary</b><span>days</span></a>
       <a href="#desktop" data-hover><i>07</i><b>Desktop</b><span>use it</span></a>
       <a href="#music" data-hover><i>08</i><b>Music</b><span>mixtape</span></a>
       <a href="#lab" data-hover><i>09</i><b>Signal Lab</b><span>static</span></a>
@@ -95,14 +107,14 @@
     </nav>
   </div>
 
-  <main id="main">
+  <main id="main" tabindex="-1">
     <!-- 01 · SIGNAL — opening scene -->
     <section class="scene scene-signal" id="signal" data-chapter="01 · SIGNAL" aria-label="Signal: the opening scene">
       <div class="scene-sticky">
         <p class="sig-kicker"><span class="blink" aria-hidden="true">●</span> INCOMING SIGNAL — DO NOT ADJUST YOUR SET</p>
         <span class="sig-line" aria-hidden="true"></span>
         <figure class="sig-figure" aria-hidden="false">
-          <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1800&q=65" alt="" fetchpriority="high" decoding="async" />
+          <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1800&q=65" alt="Glowing circuit board fading into darkness — the incoming signal" fetchpriority="high" decoding="async" width="1800" height="1200" />
         </figure>
         <h1 class="chrome-title sig-title" aria-label="Cybercore">CYBERCORE</h1>
         <p class="sig-sub">the screen flickered. something stayed on.</p>
@@ -125,7 +137,7 @@
     </section>
 
     <!-- 03 · MACHINE — the unit -->
-    <section class="scene scene-machine" id="machine" data-chapter="03 · MACHINE" aria-label="Machine: operate the unit">
+    <section class="scene scene-machine" id="machine" data-chapter="03 · MACHINE" aria-labelledby="mch-title">
       <div class="scene-sticky">
         <figure class="mch-bg" aria-hidden="true">
           <img src="https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=2000&q=65" alt="" loading="lazy" decoding="async" />
@@ -158,7 +170,7 @@
           </div>
         </div>
         <p class="mch-chip mch-chip-b">THREE CHANNELS · TURN THE KNOB</p>
-        <h2 class="mch-title">the machine<br /><em>dreams.</em></h2>
+        <h2 class="mch-title" id="mch-title">the machine<br /><em>dreams.</em></h2>
       </div>
     </section>
 
@@ -172,7 +184,8 @@
 
     <!-- 05 · ROOMS -->
     <div class="chapter-mark" data-chapter="05 · ROOMS" aria-hidden="true"><span>05 — ROOMS · LIT SPACES</span></div>
-    <section class="rooms" id="rooms" aria-label="Rooms: lit spaces">
+    <section class="rooms" id="rooms" aria-labelledby="rooms-title">
+      <h2 id="rooms-title" class="visually-hidden">Rooms — lit spaces</h2>
       <article class="room-full">
         <img data-parallax="0.1" src="https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=2000&q=70" alt="Living room at night lit only by a television glow" loading="lazy" decoding="async" />
         <span class="room-ghost" aria-hidden="true">01</span>
@@ -540,18 +553,18 @@
           </li>
         </ol>
       </div>
-      <div class="preview" id="memoryPreview" aria-hidden="true"><img alt="" /></div>
+      <div class="preview" id="memoryPreview" aria-hidden="true"><img alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="250" height="170" loading="lazy" decoding="async" /></div>
     </section>
 
     <!-- INTERLUDE -->
-    <section class="impact" aria-label="Interlude: some rooms never log off">
+    <section class="impact" aria-labelledby="impact-title">
       <figure class="impact-bg">
-        <img data-parallax="0.08" src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2200&q=70" alt="Shelves of retro gaming hardware glowing with color in the dark" loading="lazy" decoding="async" />
+        <img data-parallax="0.08" src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=2200&q=70" alt="Shelves of retro gaming hardware glowing with color in the dark" loading="lazy" decoding="async" width="2200" height="1200" />
       </figure>
       <div class="impact-shade" aria-hidden="true"></div>
       <div class="wrap impact-inner">
         <p class="engraved reveal">INTERLUDE — FULL VOLUME</p>
-        <h2 class="impact-title reveal">Some rooms<br />never log off.</h2>
+        <h2 class="impact-title reveal" id="impact-title">Some rooms<br />never log off.</h2>
       </div>
     </section>
 
@@ -608,19 +621,19 @@
           <b id="powerBtnLabel">POWER DOWN THE GLOW</b>
         </button>
       </div>
-      <footer class="foot">
-        <span>© 1998–2026 CYBERCORE</span>
-        <span class="dim">NO ANALYTICS · NO COOKIES · ONLY DUST</span>
-        <span>IMAGERY VIA UNSPLASH ARTISTS</span>
-      </footer>
     </section>
+    <footer class="foot">
+      <span>© 1998–2026 CYBERCORE</span>
+      <span class="dim">NO ANALYTICS · NO COOKIES · ONLY DUST</span>
+      <span>IMAGERY VIA UNSPLASH ARTISTS</span>
+    </footer>
   </main>
 
   <!-- LIGHTBOX -->
   <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-labelledby="lbTitle" hidden>
     <div class="lb-backdrop" data-lb-close></div>
     <figure class="lb-frame rivets">
-      <img id="lbImg" alt="" />
+      <img id="lbImg" alt="Archive find preview" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="1020" height="640" loading="lazy" decoding="async" />
       <figcaption class="lb-cap">
         <span><b id="lbTitle"></b><i id="lbMeta"></i></span>
         <span class="lb-count" id="lbCount"></span>
@@ -633,6 +646,6 @@
     </figure>
   </div>
 
-  <script src="app.js?v=6" defer></script>
+  <script src="app.js?v=7" defer></script>
 </body>
 </html>

@@ -42,6 +42,12 @@
   const bootFill = $("#bootBarFill");
   const bootEnter = $("#bootEnter");
   const bootHint = $("#bootHint");
+  let bootDone = false;
+  let bootTimer1 = 0, bootTimer2 = 0, bootInterval = 0;
+  // Scroll-lock counter: multiple overlays (boot/index/lightbox) share body overflow.
+  let lockCount = 0;
+  const lockScroll = () => { lockCount++; document.body.style.overflow = "hidden"; };
+  const unlockScroll = () => { lockCount = Math.max(0, lockCount - 1); if (!lockCount) document.body.style.overflow = ""; };
   const bootLines = [
     "CYBERCORE BIOS — CHECKING MEMORY . . . <span class='ok'>640K OK</span>",
     "OPENING THE WORLD . . . <span class='ok'>SEALED 1998</span>",
@@ -50,26 +56,34 @@
     "SIGNAL HELD. <span class='ok'>DESCEND.</span>",
   ];
   function finishBoot() {
-    if (!boot || boot.classList.contains("is-done")) return;
+    if (!boot || bootDone || boot.classList.contains("is-done")) return;
+    bootDone = true;
+    window.clearTimeout(bootTimer1); window.clearTimeout(bootTimer2); window.clearInterval(bootInterval);
     boot.classList.add("is-done");
     boot.setAttribute("aria-hidden", "true");
     document.body.dataset.state = "online";
-    document.body.style.overflow = "";
+    unlockScroll();
+    // Move focus out of the airlock so keyboard users are not trapped on a hidden button.
+    const main = $("#main");
+    if (main && document.activeElement && boot.contains(document.activeElement)) {
+      if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+      try { main.focus({ preventScroll: true }); } catch { /* older browser */ }
+    }
     scheduleSongAuto();
   }
-  if (boot) {
-    document.body.style.overflow = "hidden";
+  if (boot && bootLog && bootFill && bootEnter && bootHint) {
+    lockScroll();
     if (reducedMotion) {
       bootLog.innerHTML = bootLines.map((l) => `<p>${l}</p>`).join("");
       bootFill.style.width = "100%";
       bootEnter.disabled = false;
       bootHint.textContent = "ready — motion reduced, world calm.";
-      const t = setTimeout(finishBoot, 600);
-      bootEnter.addEventListener("click", () => { clearTimeout(t); finishBoot(); });
+      bootTimer1 = window.setTimeout(finishBoot, 600);
+      bootEnter.addEventListener("click", () => { window.clearTimeout(bootTimer1); finishBoot(); });
     } else {
       let li = 0;
       const total = bootLines.length;
-      const timer = setInterval(() => {
+      bootInterval = window.setInterval(() => {
         if (li < total) {
           const p = document.createElement("p");
           p.innerHTML = bootLines[li];
@@ -77,15 +91,15 @@
           li += 1;
           bootFill.style.width = `${(li / total) * 100}%`;
           if (li === total) {
-            clearInterval(timer);
+            window.clearInterval(bootInterval);
             bootEnter.disabled = false;
             bootHint.textContent = "the tube is warm. go down.";
-            setTimeout(finishBoot, 900);
+            bootTimer2 = window.setTimeout(finishBoot, 900);
           }
         }
       }, 320);
-      bootEnter.addEventListener("click", () => { clearInterval(timer); finishBoot(); });
-      setTimeout(finishBoot, 6000);
+      bootEnter.addEventListener("click", () => { window.clearInterval(bootInterval); finishBoot(); });
+      bootTimer1 = window.setTimeout(finishBoot, 6000);
     }
   }
 
@@ -132,14 +146,14 @@
     if (!indexmap) return;
     indexReturnFocus = document.activeElement;
     indexmap.hidden = false;
-    document.body.style.overflow = "hidden";
+    lockScroll();
     indexBtn?.setAttribute("aria-expanded", "true");
     indexClose?.focus();
   }
   function closeIndex() {
     if (!indexmap || indexmap.hidden) return;
     indexmap.hidden = true;
-    document.body.style.overflow = "";
+    unlockScroll();
     indexBtn?.setAttribute("aria-expanded", "false");
     if (indexReturnFocus && indexReturnFocus.focus) indexReturnFocus.focus();
   }
@@ -150,7 +164,7 @@
   document.addEventListener("keydown", (e) => {
     if (indexmap && !indexmap.hidden && e.key === "Escape") closeIndex();
     if (indexmap && !indexmap.hidden && e.key === "Tab") {
-      const focusables = $$("button, a[href]", indexmap).filter((elm) => !elm.disabled);
+      const focusables = $$("button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])", indexmap).filter((elm) => !elm.disabled && elm.offsetParent !== null);
       if (!focusables.length) return;
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
@@ -199,7 +213,7 @@
     // phase 1: read
     const jobs = [];
     parallaxVisible.forEach((img) => {
-      const r = img.parentElement.getBoundingClientRect();
+      const r = (img.parentElement ? img.parentElement.getBoundingClientRect() : img.getBoundingClientRect());
       jobs.push([img, (r.top + r.height / 2 - vh / 2) / vh]);
     });
     // phase 2: write
@@ -218,8 +232,12 @@
     function requestScrollFrame() {
       if (!scrollTicking) { scrollTicking = true; requestAnimationFrame(scrollFrame); }
     }
-    document.addEventListener("scroll", requestScrollFrame, { passive: true });
-    window.addEventListener("resize", requestScrollFrame);
+    window.addEventListener("scroll", requestScrollFrame, { passive: true });
+    let resizeTimer = 0;
+    window.addEventListener("resize", () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(requestScrollFrame, 120);
+    }, { passive: true });
     if (scenesActive()) updateScenes();
     parallaxFrame();
   }
@@ -229,19 +247,23 @@
     const dot = $("#cursorDot");
     const ring = $("#cursorRing");
     let mx = -100, my = -100, rx = -100, ry = -100;
+    let cursorRaf = 0;
     document.addEventListener("mousemove", (e) => { mx = e.clientX; my = e.clientY; }, { passive: true });
     (function loop() {
-      rx += (mx - rx) * 0.16;
-      ry += (my - ry) * 0.16;
-      if (dot) dot.style.transform = `translate(${mx}px,${my}px) translate(-50%,-50%)`;
-      if (ring) ring.style.transform = `translate(${rx}px,${ry}px) translate(-50%,-50%)`;
-      requestAnimationFrame(loop);
+      if (!document.hidden) {
+        rx += (mx - rx) * 0.16;
+        ry += (my - ry) * 0.16;
+        if (dot) dot.style.transform = `translate(${mx}px,${my}px) translate(-50%,-50%)`;
+        if (ring) ring.style.transform = `translate(${rx}px,${ry}px) translate(-50%,-50%)`;
+      }
+      cursorRaf = requestAnimationFrame(loop);
     })();
+    document.addEventListener("visibilitychange", () => { if (!document.hidden && !cursorRaf) loop(); });
     document.addEventListener("mouseover", (e) => {
-      if (e.target.closest("[data-hover], a, button, input")) ring?.classList.add("is-hot");
+      if (e.target instanceof Element && e.target.closest("[data-hover], a, button, input")) ring?.classList.add("is-hot");
     });
     document.addEventListener("mouseout", (e) => {
-      if (e.target.closest("[data-hover], a, button, input")) ring?.classList.remove("is-hot");
+      if (e.target instanceof Element && e.target.closest("[data-hover], a, button, input")) ring?.classList.remove("is-hot");
     });
   }
 
@@ -285,7 +307,7 @@
     }
     document.addEventListener("mousemove", (e) => { tx = e.clientX + 26; ty = e.clientY - 85; }, { passive: true });
     (function follow() {
-      if (vaultNear || (preview && preview.classList.contains("is-on"))) {
+      if (!document.hidden && (vaultNear || (preview && preview.classList.contains("is-on")))) {
         px += (tx - px) * 0.12; py += (ty - py) * 0.12;
         if (preview) { preview.style.left = `${px}px`; preview.style.top = `${py}px`; }
       }
@@ -321,6 +343,7 @@
   const screenLed = $("#screenLed");
   let chIndex = 0;
   function setChannel(i) {
+    if (!chImgs.length) return;
     chIndex = (i + chImgs.length) % chImgs.length;
     chImgs.forEach((img, k) => img.classList.toggle("is-on", k === chIndex));
     if (chLabel) chLabel.textContent = chImgs[chIndex].dataset.ch || "";
@@ -446,9 +469,10 @@
   }
   function setChannelListen(on) {
     if (on && !ensureAudio()) { logLine("audio unavailable in this browser"); return; }
+    if (!actx) return;
     chanOn = on;
+    const t = actx.currentTime ?? 0;
     actx?.resume?.();
-    const t = actx.currentTime;
     if (on) {
       chanOsc = actx.createOscillator();
       chanOsc.type = baseFreq > 500 ? "square" : "sine";
@@ -462,9 +486,15 @@
     } else {
       chanGain?.gain.setTargetAtTime(0.0, t, 0.15);
       const osc = chanOsc;
-      setTimeout(() => { try { osc?.stop(); } catch {} }, 600);
+      const oscGain = chanGain;
+      window.setTimeout(() => {
+        try { osc?.stop(); } catch { /* already stopped */ }
+        try { osc?.disconnect(); } catch { /* ignore */ }
+        try { oscGain?.disconnect(); } catch { /* ignore */ }
+      }, 600);
       master?.gain.setTargetAtTime(0.0, t, 0.3);
       chanOsc = null;
+      chanGain = null;
     }
     signalSoundBtn?.setAttribute("aria-pressed", String(on));
     if (signalSoundBtn) signalSoundBtn.textContent = on ? "Mute this channel" : "Listen to this channel";
@@ -513,7 +543,7 @@
   const songWatch = $("#songWatch");
   const trackBtns = $$(".track");
   let ytPlayer = null, ytReady = false, ytApiLoading = false, songIdx = 0;
-  let playerWanted = false, pendingPlay = false; // never build or start audio without human demand
+  let playerWanted = false, pendingPlay = false, pendingVideoId = null; // never build or start audio without human demand
 
   function setTrackUI() {
     const s = SONGS[songIdx];
@@ -542,7 +572,12 @@
   }
 
   function createYtPlayer(videoId) {
-    if (ytPlayer || !window.YT || !window.YT.Player) return;
+    if (!window.YT || !window.YT.Player) return;
+    if (ytPlayer && ytReady && videoId && ytPlayer.loadVideoById) {
+      try { ytPlayer.loadVideoById(videoId); } catch { /* user can press play */ }
+      return;
+    }
+    if (ytPlayer) { pendingVideoId = videoId || pendingVideoId; return; }
     ytPlayer = new window.YT.Player("ytPlayer", {
       host: "https://www.youtube-nocookie.com",
       videoId: videoId,
@@ -550,20 +585,34 @@
       events: {
         onReady: (e) => {
           ytReady = true;
-          e.target.setVolume(songVol ? parseInt(songVol.value, 10) : 55);
+          ytApiLoading = false;
+          try { e.target.setVolume(songVol ? parseInt(songVol.value, 10) : 55); } catch { /* ignore */ }
+          try {
+            const fr = e.target.getIframe && e.target.getIframe();
+            if (fr && !fr.getAttribute("title")) fr.setAttribute("title", "Official YouTube player");
+          } catch { /* ignore */ }
+          if (pendingVideoId && pendingVideoId !== videoId) {
+            const pv = pendingVideoId; pendingVideoId = null;
+            try { e.target.loadVideoById(pv); } catch { /* ignore */ }
+          }
           // Play ONLY as the continuation of a human tap. Auto-playing here
           // (e.g. in a hidden player at load) wedges mobile browsers.
           if (pendingPlay) { pendingPlay = false; try { e.target.playVideo(); } catch { /* user can press play */ } }
         },
         onStateChange: (e) => setSongUI(e.data),
         onError: () => {
+          ytApiLoading = false;
           if (songNote) songNote.textContent = "TRANSMISSION BLOCKED BY OWNER — THE ARCHIVE HUMS ON.";
           setSongUI(2);
         },
       },
     });
   }
-  window.onYouTubeIframeAPIReady = () => { if (playerWanted) createYtPlayer(SONGS[songIdx].id); };
+  const prevYtReady = window.onYouTubeIframeAPIReady;
+  window.onYouTubeIframeAPIReady = (...args) => {
+    try { if (typeof prevYtReady === "function") prevYtReady(...args); } catch { /* ignore previous handler */ }
+    if (playerWanted) createYtPlayer(pendingVideoId || SONGS[songIdx].id);
+  };
 
   function loadYtApi(onFail) {
     if (window.YT && window.YT.Player) return true;
@@ -581,8 +630,10 @@
     songIdx = (i + SONGS.length) % SONGS.length;
     setTrackUI();
     playerWanted = true;
+    pendingVideoId = SONGS[songIdx].id;
     if (ytPlayer && ytReady) {
       try { ytPlayer.loadVideoById(SONGS[songIdx].id); } catch { /* user can press play */ }
+      pendingVideoId = null;
       return;
     }
     pendingPlay = true; // continue into playback as soon as the player exists
@@ -634,12 +685,13 @@
   function attemptSongAuto(attempts = 0) {
     if (songAutoDone || songStarted) return;
     if (ytPlayer && ytReady) {
-      songAutoDone = true;
       try { ytPlayer.playVideo(); } catch { /* blocked below */ }
       window.setTimeout(() => {
         let st = -99;
         try { st = ytPlayer.getPlayerState(); } catch { /* ignore */ }
-        if (st !== 1 && !songStarted) openDeckAuto();
+        if (st === 1 || songStarted) { songAutoDone = true; return; }
+        openDeckAuto();
+        // Do not mark done on blocked autoplay — one manual tap still works.
       }, 1800);
       return;
     }
@@ -662,12 +714,15 @@
   let lbIndex = 0;
   let lastFocus = null;
   function openLb(i) {
+    if (!gItems.length) return;
     lbIndex = (i + gItems.length) % gItems.length;
     const it = gItems[lbIndex];
-    const full = it.dataset.full || $("img", it)?.getAttribute("src") || "";
+    if (!it) return;
+    const im = $("img", it);
+    const full = it.dataset.full || im?.getAttribute("src") || "";
     if (lbImg) {
       lbImg.setAttribute("src", full);
-      lbImg.setAttribute("alt", $("img", it)?.getAttribute("alt") || it.dataset.title || "Archive find");
+      lbImg.setAttribute("alt", im?.getAttribute("alt") || it.dataset.title || "Archive find");
     }
     if (lbTitle) lbTitle.textContent = it.dataset.title || "";
     if (lbMeta) lbMeta.textContent = it.dataset.meta || "";
@@ -675,11 +730,12 @@
     if (lb) lb.hidden = false;
     lastFocus = document.activeElement;
     $("#lbClose")?.focus();
-    document.body.style.overflow = "hidden";
+    lockScroll();
   }
   function closeLb() {
-    if (lb) lb.hidden = true;
-    document.body.style.overflow = "";
+    if (!lb || lb.hidden) return;
+    lb.hidden = true;
+    unlockScroll();
     if (lastFocus && lastFocus.focus) lastFocus.focus();
   }
   gItems.forEach((it, i) => it.addEventListener("click", () => openLb(i)));
@@ -693,7 +749,7 @@
     if (e.key === "ArrowLeft") openLb(lbIndex - 1);
     if (e.key === "ArrowRight") openLb(lbIndex + 1);
     if (e.key === "Tab") {
-      const focusables = $$("button", lb).filter((b) => !b.disabled);
+      const focusables = $$("button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])", lb).filter((b) => !b.disabled && b.offsetParent !== null);
       if (!focusables.length) return;
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
@@ -739,6 +795,7 @@
       g.gain.linearRampToValueAtTime(vol, t + 0.008);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       o.connect(g); g.connect(actx.destination);
+      o.onended = () => { try { o.disconnect(); } catch {} try { g.disconnect(); } catch {} };
       o.start(t); o.stop(t + dur + 0.05);
     } catch { /* silent */ }
   }
@@ -784,7 +841,7 @@
   function focusWin(id) {
     const w = openWins[id];
     if (!w) return;
-    zTop += 1;
+    zTop = Math.min(zTop + 1, 90);
     w.el.style.zIndex = String(zTop);
     w.el.style.display = "";
     $$(".traybtn", deskTray).forEach((b) => b.classList.toggle("active", b.dataset.win === id));
@@ -814,7 +871,9 @@
     sysBlip(660, 0.06);
     const n = Object.keys(openWins).length;
     const win = el("div", "win");
-    win.style.zIndex = String((zTop += 1));
+    win.setAttribute("role", "dialog");
+    win.setAttribute("aria-label", title);
+    win.style.zIndex = String((zTop = Math.min(zTop + 1, 90)));
     win.style.left = `${12 + (n % 5) * 26}px`;
     win.style.top = `${12 + (n % 5) * 24}px`;
     if (opts.wide) win.style.width = "min(560px, calc(100% - 20px))";
@@ -933,7 +992,6 @@
     b.children[1].textContent = name;
     b.children[2].textContent = meta || "";
     b.addEventListener("click", onOpen);
-    b.addEventListener("dblclick", onOpen);
     return b;
   }
 
@@ -950,6 +1008,10 @@
       const v = el("div", "viewer", "");
       const img = el("img", "", "");
       img.src = photo.src; img.alt = photo.alt; img.loading = "lazy"; img.decoding = "async";
+      img.addEventListener("error", () => {
+        img.style.opacity = "0";
+        v.style.background = "linear-gradient(135deg,#1a2226,#0d1418 60%,#1a1410)";
+      }, { once: true });
       const cap = el("p", "", "");
       cap.textContent = photo.cap;
       v.append(img, cap);
@@ -1023,6 +1085,8 @@
   /* --- browser: three original era-inspired pages, fully clickable --- */
   const BROWSER = { hist: [], page: "portal" };
   function openBrowser() {
+    BROWSER.hist = [];
+    BROWSER.page = "portal";
     openWindow("browser", "browser — dial-up", (body, rec, status) => {
       const bar = el("div", "browser-bar", "");
       const back = el("button", "", "←"); back.type = "button"; back.setAttribute("aria-label", "Back");
@@ -1116,7 +1180,6 @@
       const st = el("p", "chat-status", "sara is typing…");
       body.append(log, st);
       let i = 0, cancelled = false;
-      rec.cleanup = () => { cancelled = true; };
       const step = () => {
         if (cancelled) return;
         if (i >= CHAT_SCRIPT.length) { st.textContent = "sara went offline · 22:42 · the song is still playing"; return; }
@@ -1145,6 +1208,9 @@
       const cv = el("canvas", "", "");
       cv.width = 20; cv.height = 20;
       cv.id = "snakeCanvas";
+      cv.setAttribute("tabindex", "0");
+      cv.setAttribute("role", "img");
+      cv.setAttribute("aria-label", "Snake game. Focus and use arrow keys or WASD to play.");
       const hud = el("div", "snake-hud", "<span>SCORE 0</span><span>BEST: DAD 420</span>");
       const start = el("button", "snake-start", "▶ START");
       start.type = "button";
@@ -1152,9 +1218,16 @@
       body.append(wrap);
       const ctx2 = cv.getContext("2d");
       let snake, dir, food, score, timer2, alive;
+      const placeFood = () => {
+        for (let tries = 0; tries < 100; tries++) {
+          const f = [Math.floor(Math.random() * 20), Math.floor(Math.random() * 20)];
+          if (!snake.some((s) => s[0] === f[0] && s[1] === f[1])) return f;
+        }
+        return [0, 0];
+      };
       const reset = () => {
         snake = [[10, 10], [9, 10], [8, 10]]; dir = [1, 0]; score = 0; alive = true;
-        food = [5 + Math.floor(Math.random() * 10), 5 + Math.floor(Math.random() * 10)];
+        food = placeFood();
         hud.children[0].textContent = "SCORE 0";
       };
       const tick = () => {
@@ -1169,7 +1242,7 @@
         if (head[0] === food[0] && head[1] === food[1]) {
           score += 10; hud.children[0].textContent = `SCORE ${score}`;
           sysBlip(880, 0.06);
-          food = [Math.floor(Math.random() * 20), Math.floor(Math.random() * 20)];
+          food = placeFood();
         } else snake.pop();
         ctx2.fillStyle = "#0a1410"; ctx2.fillRect(0, 0, 20, 20);
         ctx2.fillStyle = "#8cff9e";
@@ -1178,13 +1251,18 @@
         ctx2.fillRect(food[0], food[1], 1, 1);
       };
       const key = (e) => {
+        if (!(e.target instanceof Element)) return;
         if (e.target.closest("input, textarea, [contenteditable]")) return;
         const k = e.key;
-        if (k === "ArrowUp" || k === "w") dir = [0, -1];
-        else if (k === "ArrowDown" || k === "s") dir = [0, 1];
-        else if (k === "ArrowLeft" || k === "a") dir = [-1, 0];
-        else if (k === "ArrowRight" || k === "d") dir = [1, 0];
-        else return;
+        const want =
+          k === "ArrowUp" || k === "w" ? [0, -1] :
+          k === "ArrowDown" || k === "s" ? [0, 1] :
+          k === "ArrowLeft" || k === "a" ? [-1, 0] :
+          k === "ArrowRight" || k === "d" ? [1, 0] : null;
+        if (!want) return;
+        // No instant 180° reversal — it kills instantly and feels like a bug.
+        if (want[0] === -dir[0] && want[1] === -dir[1]) return;
+        dir = want;
         e.preventDefault();
       };
       let swipeX = null, swipeY = null;
@@ -1194,7 +1272,8 @@
         const t = e.touches[0];
         const dx = t.clientX - swipeX, dy = t.clientY - swipeY;
         if (Math.abs(dx) < 14 && Math.abs(dy) < 14) return;
-        dir = Math.abs(dx) > Math.abs(dy) ? [dx > 0 ? 1 : -1, 0] : [0, dy > 0 ? 1 : -1];
+        const want = Math.abs(dx) > Math.abs(dy) ? [dx > 0 ? 1 : -1, 0] : [0, dy > 0 ? 1 : -1];
+        if (!(want[0] === -dir[0] && want[1] === -dir[1])) dir = want;
         swipeX = t.clientX; swipeY = t.clientY;
         e.preventDefault();
       };
@@ -1202,9 +1281,11 @@
         reset();
         window.clearInterval(timer2);
         timer2 = window.setInterval(tick, 115);
+        document.removeEventListener("keydown", key);
         document.addEventListener("keydown", key);
         start.textContent = "↻ RESTART";
         sysBlip(660, 0.07);
+        try { cv.focus({ preventScroll: true }); } catch { /* ignore */ }
       });
       cv.addEventListener("touchstart", tStart, { passive: true });
       cv.addEventListener("touchmove", tMove, { passive: false });
@@ -1331,6 +1412,11 @@
     openWindow("camera", "digicam — 16 MB card", (body) => {
       const v = el("div", "camview", "");
       const img = el("img", "", "");
+      img.loading = "lazy"; img.decoding = "async";
+      img.addEventListener("error", () => {
+        img.style.opacity = "0";
+        v.style.background = "linear-gradient(135deg,#1a2226,#0d1418 60%,#1a1410)";
+      }, { once: true });
       const meta = el("div", "cam-meta", "<span></span><span></span>");
       const nav = el("div", "cam-nav", "");
       const prev = el("button", "snake-start", "← PREV"); prev.type = "button";
@@ -1384,7 +1470,7 @@
       const flagBtn = el("button", "snake-start", "FLAG: OFF"); flagBtn.type = "button";
       foot.append(restart, flagBtn);
       body.append(hud, grid, foot);
-      let board, revealed, flagged, over, won, secs, timer3, flagMode;
+      let board, revealed, flagged, over, won, secs, timer3, flagMode, openCount, firstDig;
       const cellAt = (x, y) => grid.children[y * N + x];
       const neighbors = (x, y) => {
         const out = [];
@@ -1402,8 +1488,8 @@
       const flag = (x, y) => {
         if (over || won || revealed[y][x]) return;
         const c = cellAt(x, y);
-        if (c.classList.contains("flag")) { c.classList.remove("flag"); flagged--; }
-        else { c.classList.add("flag"); flagged++; sysBlip(500, 0.04); }
+        if (c.classList.contains("flag")) { c.classList.remove("flag"); c.setAttribute("aria-label", `cell ${x + 1}, ${y + 1}`); flagged--; }
+        else { c.classList.add("flag"); c.setAttribute("aria-label", `cell ${x + 1}, ${y + 1}, flagged`); flagged++; sysBlip(500, 0.04); }
         paint();
       };
       const flood = (x, y) => {
@@ -1414,18 +1500,37 @@
           const c = cellAt(cx, cy);
           if (c.classList.contains("flag")) continue;
           revealed[cy][cx] = true;
-          c.classList.add("open");
+          openCount++;
           const v = board[cy][cx];
+          c.classList.add("open");
+          c.setAttribute("aria-label", `cell ${cx + 1}, ${cy + 1}, open${v > 0 ? `, ${v}` : ""}`);
           if (v > 0) {
             c.textContent = String(v);
             c.style.color = ["", "#1c4f9c", "#2f7a4d", "#c62f2f", "#1c1c8c", "#7a1f1f", "#2f7a7a", "#111111", "#666666"][v];
           } else neighbors(cx, cy).forEach(([nx, ny]) => stack.push([nx, ny]));
         }
       };
+      const ensureSafeFirstDig = (sx, sy) => {
+        if (!firstDig || board[sy][sx] !== -1) return;
+        // Move the mine away from the first click so the opening move never explodes.
+        outer: for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+          if (board[y][x] !== -1 && (x !== sx || y !== sy)) {
+            board[y][x] = -1;
+            board[sy][sx] = 0;
+            break outer;
+          }
+        }
+        for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+          if (board[y][x] === -1) continue;
+          board[y][x] = neighbors(x, y).filter(([nx, ny]) => board[ny][nx] === -1).length;
+        }
+      };
       const dig = (x, y) => {
         if (over || won) return;
         if (flagMode) { flag(x, y); return; }
         if (revealed[y][x] || cellAt(x, y).classList.contains("flag")) return;
+        ensureSafeFirstDig(x, y);
+        firstDig = false;
         if (board[y][x] === -1) {
           over = true;
           for (let yy = 0; yy < N; yy++) for (let xx = 0; xx < N; xx++) {
@@ -1437,9 +1542,7 @@
         }
         flood(x, y);
         sysBlip(760, 0.03, "square", 0.015);
-        let open = 0;
-        revealed.flat().forEach((v) => { if (v) open++; });
-        if (open === N * N - M) {
+        if (openCount === N * N - M) {
           won = true;
           paint();
           sysBlip(660, 0.08); window.setTimeout(() => sysBlip(880, 0.1), 110);
@@ -1448,7 +1551,7 @@
       const newGame = () => {
         board = Array.from({ length: N }, () => Array(N).fill(0));
         revealed = Array.from({ length: N }, () => Array(N).fill(false));
-        flagged = 0; over = false; won = false; secs = 0; flagMode = false;
+        flagged = 0; over = false; won = false; secs = 0; flagMode = false; openCount = 0; firstDig = true;
         flagBtn.textContent = "FLAG: OFF";
         let placed = 0;
         while (placed < M) {
@@ -1493,47 +1596,64 @@
       foot.append(restart);
       body.append(hud, grid, foot);
       const GLYPHS8 = ["♪", "☎", "⌨", "◎", "▲", "■", "●", "★"];
-      let first = null, lock = false, moves = 0, found = 0, secs = 0, timer4;
+      let first = null, lock = false, moves = 0, found = 0, secs = 0, timer4, flipTimer = 0;
       const paint = () => {
-        hud.children[0].textContent = `MOVES ${moves}`;
+        hud.children[0].textContent = `MOVES ${moves} · ${secs}s`;
         hud.children[1].textContent = found === 8 ? "ALL PAIRED ★" : `PAIRS ${found}/8`;
       };
+      const shuffle = (arr) => {
+        for (let i = arr.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+      };
       const deal = () => {
-        const deck = [...GLYPHS8, ...GLYPHS8].sort(() => Math.random() - 0.5);
+        window.clearTimeout(flipTimer);
+        const deck = shuffle([...GLYPHS8, ...GLYPHS8]);
         grid.innerHTML = "";
         first = null; lock = false; moves = 0; found = 0; secs = 0;
         deck.forEach((g) => {
           const c = el("button", "matchcard", g);
           c.type = "button";
           c.dataset.g = g;
-          c.setAttribute("aria-label", "face-down card");
+          c.setAttribute("aria-label", `face-down card, ${g}`);
           c.addEventListener("click", () => {
             if (lock || c.classList.contains("face") || c.classList.contains("done")) return;
             c.classList.add("face");
+            c.setAttribute("aria-label", `face-up card, ${g}`);
             sysBlip(700, 0.04);
             if (!first) { first = c; return; }
             moves++;
             if (first.dataset.g === c.dataset.g) {
               first.classList.add("done"); c.classList.add("done");
+              first.setAttribute("aria-label", `paired card, ${g}`);
+              c.setAttribute("aria-label", `paired card, ${g}`);
               first = null; found++;
               sysBlip(880, 0.07);
-              if (found === 8) { paint(); sysBlip(660, 0.08); setTimeout(() => sysBlip(990, 0.12), 120); return; }
+              if (found === 8) { paint(); sysBlip(660, 0.08); window.setTimeout(() => sysBlip(990, 0.12), 120); return; }
             } else {
               lock = true;
               const a = first; first = null;
-              setTimeout(() => { a.classList.remove("face"); c.classList.remove("face"); lock = false; }, 650);
+              window.clearTimeout(flipTimer);
+              flipTimer = window.setTimeout(() => {
+                a.classList.remove("face"); c.classList.remove("face");
+                a.setAttribute("aria-label", `face-down card, ${a.dataset.g}`);
+                c.setAttribute("aria-label", `face-down card, ${c.dataset.g}`);
+                lock = false;
+              }, 650);
             }
             paint();
           });
           grid.append(c);
         });
         window.clearInterval(timer4);
-        timer4 = window.setInterval(() => { secs++; }, 1000);
+        timer4 = window.setInterval(() => { secs++; paint(); }, 1000);
         paint();
       };
       restart.addEventListener("click", () => { deal(); sysBlip(660, 0.06); });
       deal();
-      rec.cleanup = () => window.clearInterval(timer4);
+      rec.cleanup = () => { window.clearInterval(timer4); window.clearTimeout(flipTimer); };
     }, { status: "find the pairs · they were always in pairs", wide: true });
   }
 
@@ -1597,48 +1717,76 @@
       const setWall = el("button", "paint-btn", "SET AS WALLPAPER");
       setWall.type = "button";
       tools.append(clear, setWall);
+      const kbHint = el("p", "ctl-note", "Keyboard: focus the canvas, arrows move the pen, Space draws, C clears.");
       const cv = el("canvas", "", "");
       cv.id = "paintCanvas";
       cv.width = 400; cv.height = 260;
-      body.append(tools, cv);
+      cv.setAttribute("tabindex", "0");
+      cv.setAttribute("role", "img");
+      cv.setAttribute("aria-label", "Paint canvas. Use arrow keys to move, space to draw, C to clear.");
+      body.append(tools, cv, kbHint);
       const pctx = cv.getContext("2d");
       pctx.fillStyle = "#ffffff"; pctx.fillRect(0, 0, 400, 260);
       pctx.lineCap = "round"; pctx.lineJoin = "round"; pctx.lineWidth = 4;
-      let drawing = false, lx = 0, ly = 0;
+      let drawing = false, lx = 0, ly = 0, kx = 200, ky = 130, kDown = false;
       const pos = (e) => {
         const r = cv.getBoundingClientRect();
         return [(e.clientX - r.left) * (400 / r.width), (e.clientY - r.top) * (260 / r.height)];
       };
+      const lineTo = (x, y) => {
+        pctx.strokeStyle = color;
+        pctx.beginPath(); pctx.moveTo(lx, ly); pctx.lineTo(x, y); pctx.stroke();
+        lx = x; ly = y; kx = x; ky = y;
+      };
       cv.addEventListener("pointerdown", (e) => {
         e.preventDefault();
-        cv.setPointerCapture(e.pointerId);
+        try { cv.setPointerCapture(e.pointerId); } catch { /* ignore */ }
         [lx, ly] = pos(e);
+        kx = lx; ky = ly;
         drawing = true;
       });
       cv.addEventListener("pointermove", (e) => {
         if (!drawing) return;
         const [x, y] = pos(e);
-        pctx.strokeStyle = color;
-        pctx.beginPath(); pctx.moveTo(lx, ly); pctx.lineTo(x, y); pctx.stroke();
-        lx = x; ly = y;
+        lineTo(x, y);
       });
       const stop = () => { drawing = false; };
       cv.addEventListener("pointerup", stop);
       cv.addEventListener("pointercancel", stop);
+      cv.addEventListener("keydown", (e) => {
+        const step = e.shiftKey ? 12 : 4;
+        let nx = kx, ny = ky, handled = true;
+        if (e.key === "ArrowLeft") nx = Math.max(0, kx - step);
+        else if (e.key === "ArrowRight") nx = Math.min(400, kx + step);
+        else if (e.key === "ArrowUp") ny = Math.max(0, ky - step);
+        else if (e.key === "ArrowDown") ny = Math.min(260, ky + step);
+        else if (e.key === " ") { if (!kDown) { lx = kx; ly = ky; kDown = true; } lineTo(kx, ky); }
+        else if (e.key === "c" || e.key === "C") { pctx.fillStyle = "#ffffff"; pctx.fillRect(0, 0, 400, 260); }
+        else handled = false;
+        if (handled) {
+          e.preventDefault();
+          if (e.key.startsWith("Arrow")) {
+            if (kDown) lineTo(nx, ny);
+            else { kx = nx; ky = ny; lx = nx; ly = ny; }
+          }
+        }
+      });
+      cv.addEventListener("keyup", (e) => { if (e.key === " ") kDown = false; });
       clear.addEventListener("click", () => {
         pctx.fillStyle = "#ffffff"; pctx.fillRect(0, 0, 400, 260);
         sysBlip(440, 0.05);
       });
       setWall.addEventListener("click", () => {
         const wall = document.querySelector(".wallpaper");
-        if (wall) {
-          wall.style.backgroundImage = `url("${cv.toDataURL("image/png")}")`;
+        if (!wall) return;
+        try {
+          wall.style.backgroundImage = `url("${cv.toDataURL("image/jpeg", 0.85)}")`;
           wall.style.backgroundSize = "cover";
           wall.style.backgroundPosition = "center";
           sysBlip(880, 0.09);
-        }
+        } catch { /* tainted canvas or memory — keep default wallpaper */ }
       });
-      void rec;
+      rec.cleanup = () => { drawing = false; };
     }, { status: "a masterpiece. unsaved, obviously." });
   }
 
@@ -1702,7 +1850,6 @@
     b.setAttribute("role", "listitem");
     b.children[1].textContent = ic.label;
     b.addEventListener("click", ic.run);
-    b.addEventListener("dblclick", ic.run);
     deskIcons.append(b);
   }
   if (deskIcons) {
